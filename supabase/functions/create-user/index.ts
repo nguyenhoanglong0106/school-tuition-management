@@ -1,8 +1,8 @@
 // Supabase Edge Function: create-user
 // Privileged operation — creates a Supabase Auth user + linked profile row for
 // a Student or Teacher. Runs with the Service Role key (server-side only,
-// never exposed to the frontend) and re-verifies the caller is an ADMIN
-// before doing anything, so a forged frontend role can never trigger this.
+// never exposed to the frontend) and re-verifies the caller is an ADMIN or
+// TEACHER before doing anything.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { corsHeaders, jsonResponse } from '../_shared/cors.js';
 
@@ -18,8 +18,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    // Client scoped to the caller's own JWT — used only to verify identity & role.
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -38,7 +36,6 @@ Deno.serve(async (req) => {
     }
 
     const { email, loginName, password, fullName, role, phone, studentId } = await req.json();
-
     if (!password || !fullName || !['STUDENT', 'TEACHER'].includes(role)) {
       return jsonResponse({ error: 'Thiếu thông tin bắt buộc hoặc vai trò không hợp lệ' }, 400);
     }
@@ -55,11 +52,10 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Mật khẩu phải có ít nhất 6 ký tự' }, 400);
     }
 
-    // Privileged client — Service Role key lives only in this server-side function.
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const normalizedLoginName = loginName?.trim().toLowerCase();
     const authEmail = role === 'STUDENT'
-      ? `${normalizedLoginName}@student.internal`
+      ? `student_${crypto.randomUUID()}@login.internal`
       : email.trim().toLowerCase();
 
     if (role === 'STUDENT') {
@@ -77,7 +73,6 @@ Deno.serve(async (req) => {
       email_confirm: true,
       user_metadata: { full_name: fullName },
     });
-
     if (createError) return jsonResponse({ error: createError.message }, 400);
 
     const { error: profileError } = await adminClient.from('profiles').insert({
@@ -89,9 +84,7 @@ Deno.serve(async (req) => {
       is_active: true,
       must_change_password: true,
     });
-
     if (profileError) {
-      // Roll back the auth user so we don't leave an orphaned account behind.
       await adminClient.auth.admin.deleteUser(created.user.id);
       return jsonResponse({ error: profileError.message }, 400);
     }

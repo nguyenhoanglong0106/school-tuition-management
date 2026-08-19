@@ -2,14 +2,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { corsHeaders, jsonResponse } from '../_shared/cors.js';
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { loginName, studentCode, password } = await req.json();
-    const identifier = (loginName || studentCode || '').trim().toLowerCase();
-    if (!identifier || !password) {
+    const { loginName, password } = await req.json();
+    if (!loginName || !password) {
       return jsonResponse({ error: 'Vui lòng nhập tài khoản và mật khẩu' }, 400);
     }
 
@@ -17,14 +14,14 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const identifier = loginName.trim().toLowerCase();
 
     const { data: student, error: studentError } = await adminClient
       .from('students')
       .select('profile_id')
-      .or(`login_name.ilike.${identifier},student_code.ilike.${identifier}`)
+      .eq('login_name', identifier)
       .is('deleted_at', null)
       .single();
-
     if (studentError || !student?.profile_id) {
       return jsonResponse({ error: 'Tài khoản hoặc mật khẩu không chính xác' }, 401);
     }
@@ -35,7 +32,6 @@ Deno.serve(async (req) => {
       .eq('id', student.profile_id)
       .eq('role', 'STUDENT')
       .single();
-
     if (profileError || !profile?.email || profile.is_active === false) {
       return jsonResponse({ error: 'Tài khoản học viên không hoạt động' }, 401);
     }
@@ -45,7 +41,6 @@ Deno.serve(async (req) => {
       email: profile.email,
       password,
     });
-
     if (error || !data.session) {
       return jsonResponse({ error: 'Tài khoản hoặc mật khẩu không chính xác' }, 401);
     }
