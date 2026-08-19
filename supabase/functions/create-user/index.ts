@@ -61,10 +61,12 @@ Deno.serve(async (req) => {
     if (role === 'STUDENT') {
       const { data: existingStudent } = await adminClient
         .from('students')
-        .select('id')
+        .select('id, profile_id')
         .ilike('login_name', normalizedLoginName)
         .maybeSingle();
-      if (existingStudent) return jsonResponse({ error: 'Tài khoản học viên đã tồn tại' }, 400);
+      if (existingStudent && existingStudent.id !== studentId) {
+        return jsonResponse({ error: 'Tài khoản học viên đã tồn tại' }, 400);
+      }
     }
 
     const { data: created, error: createError } = await adminClient.auth.admin.createUser({
