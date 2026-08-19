@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, BookOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, BookOpen } from 'lucide-react';
 import { classService } from '@/services/classService';
 import { useToast } from '@/contexts/ToastContext';
 import { EmptyState, Skeleton } from '@/components/common/UI';
 import { Input, Checkbox } from '@/components/common/Form';
-import { Modal } from '@/components/common/Modal';
+import { ConfirmDialog, Modal } from '@/components/common/Modal';
 
 const schema = z.object({
   code: z.string().min(1, 'Bắt buộc').toUpperCase(),
@@ -23,6 +23,8 @@ export default function Subjects() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
@@ -74,6 +76,20 @@ export default function Subjects() {
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await classService.deactivateSubject(deleteTarget.id);
+      addToast('Đã ngừng hoạt động môn học');
+      setDeleteTarget(null);
+      load();
+    } catch (err) {
+      addToast(err.message ?? 'Không thể xóa môn học', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-5 animate-fade-in">
       <div className="page-header">
@@ -99,7 +115,10 @@ export default function Subjects() {
                   <span className="badge badge-primary">{s.code}</span>
                   <h3 className="font-semibold text-slate-800 mt-2">{s.name}</h3>
                 </div>
-                <button onClick={() => openEdit(s)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><Pencil size={16} /></button>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => openEdit(s)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Sửa môn học"><Pencil size={16} /></button>
+                  {s.is_active && <button onClick={() => setDeleteTarget(s)} className="p-2 rounded-lg hover:bg-red-50 text-red-500" aria-label="Xóa môn học"><Trash2 size={16} /></button>}
+                </div>
               </div>
               {s.description && <p className="text-sm text-slate-500 mt-2">{s.description}</p>}
               {!s.is_active && <span className="badge badge-neutral mt-3">Ngừng hoạt động</span>}
@@ -120,6 +139,16 @@ export default function Subjects() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Xóa môn học"
+        message={`Môn học "${deleteTarget?.name}" sẽ được ngừng hoạt động và không còn xuất hiện khi tạo lớp mới. Dữ liệu lớp học cũ vẫn được giữ lại.`}
+        confirmLabel="Xóa môn học"
+      />
     </div>
   );
 }

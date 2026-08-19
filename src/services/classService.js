@@ -177,4 +177,12 @@ export const classService = {
     if (error) throw error;
     return data;
   },
+
+  async deactivateSubject(id) {
+    const { error } = await supabase
+      .from('subjects')
+      .update({ is_active: false })
+      .eq('id', id);
+    if (error) throw error;
+  },
 };
