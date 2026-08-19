@@ -39,9 +39,6 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => e.target === overlayRef.current && onClose?.()}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
-
       {/* Modal */}
       <div
         className={`relative w-full ${sizeClasses[size]} bg-white rounded-t-3xl sm:rounded-3xl shadow-elevated animate-scale-in flex flex-col max-h-[90vh]`}
