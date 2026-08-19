@@ -1,7 +1,3 @@
-// Supabase Edge Function: reset-user-password
-// Admin-only: generates a new temporary password for a user's Auth account
-// and flags must_change_password so they are forced to set a new one on
-// their next login. Uses the Service Role key server-side only.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { corsHeaders, jsonResponse } from '../_shared/cors.js';
 
@@ -13,9 +9,7 @@ function generateTempPassword() {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get('Authorization');
@@ -24,7 +18,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -37,9 +30,8 @@ Deno.serve(async (req) => {
       .select('role')
       .eq('id', caller.id)
       .single();
-
-    if (callerProfile?.role !== 'ADMIN') {
-      return jsonResponse({ error: 'Chỉ quản trị viên mới có quyền đặt lại mật khẩu' }, 403);
+    if (!['ADMIN', 'TEACHER'].includes(callerProfile?.role)) {
+      return jsonResponse({ error: 'Chỉ quản trị viên hoặc giáo viên mới có quyền đặt lại mật khẩu' }, 403);
     }
 
     const { profileId } = await req.json();
@@ -47,14 +39,12 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const tempPassword = generateTempPassword();
-
     const { error: updateError } = await adminClient.auth.admin.updateUserById(profileId, {
       password: tempPassword,
     });
     if (updateError) return jsonResponse({ error: updateError.message }, 400);
 
     await adminClient.from('profiles').update({ must_change_password: true }).eq('id', profileId);
-
     return jsonResponse({ success: true, tempPassword });
   } catch (err) {
     return jsonResponse({ error: err.message ?? 'Lỗi hệ thống' }, 500);

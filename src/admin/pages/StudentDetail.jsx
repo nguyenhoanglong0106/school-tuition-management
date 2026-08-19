@@ -36,6 +36,8 @@ export default function StudentDetail() {
   const [tabData, setTabData] = useState({});
   const [tabLoading, setTabLoading] = useState(false);
   const [accountModal, setAccountModal] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     loadStudent();
@@ -90,6 +92,19 @@ export default function StudentDetail() {
     }
   };
 
+  const handleResetPassword = async () => {
+    setResetting(true);
+    try {
+      const { tempPassword } = await accountService.resetUserPassword(student.profile_id);
+      setResetPassword(tempPassword);
+      addToast('Đã đặt lại mật khẩu');
+    } catch (err) {
+      addToast(err.message ?? 'Không thể đặt lại mật khẩu', 'error');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -120,7 +135,12 @@ export default function StudentDetail() {
           {(isAdmin || isTeacher) && (
             <div className="flex items-center gap-2">
               {student.profile_id ? (
-                <span className="badge badge-success"><ShieldCheck size={12} /> Đã có tài khoản</span>
+                <>
+                  <span className="badge badge-success"><ShieldCheck size={12} /> Đã có tài khoản</span>
+                  <button onClick={handleResetPassword} disabled={resetting} className="btn btn-outline btn-sm">
+                    <KeyRound size={14} /> {resetting ? 'Đang đặt lại...' : 'Đặt lại mật khẩu'}
+                  </button>
+                </>
               ) : (
                 <button onClick={() => setAccountModal(true)} className="btn btn-outline btn-sm">
                   <UserPlus size={14} /> Tạo tài khoản đăng nhập
@@ -263,6 +283,20 @@ export default function StudentDetail() {
             loadStudent();
           }}
         />
+      )}
+      {resetPassword && (
+        <Modal isOpen onClose={() => setResetPassword('')} title="Mật khẩu mới">
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">
+              Gửi mật khẩu này cho <strong>{student.full_name}</strong>. Mật khẩu chỉ hiển thị lần này.
+            </p>
+            <div className="rounded-xl bg-primary-50 border border-primary-100 px-4 py-3 text-center text-xl font-bold tracking-widest text-primary-700 select-all">
+              {resetPassword}
+            </div>
+            <p className="text-xs text-slate-400">Học viên sẽ được yêu cầu đổi mật khẩu sau khi đăng nhập.</p>
+            <button onClick={() => setResetPassword('')} className="btn-primary w-full justify-center">Đã lưu mật khẩu</button>
+          </div>
+        </Modal>
       )}
     </div>
   );
