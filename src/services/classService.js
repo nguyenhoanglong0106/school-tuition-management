@@ -147,12 +147,13 @@ export const classService = {
   },
 
   // Subjects
-  async getAllSubjects() {
-    const { data, error } = await supabase
+  async getAllSubjects({ includeInactive = false } = {}) {
+    let query = supabase
       .from('subjects')
       .select('*')
-      .eq('is_active', true)
       .order('name');
+    if (!includeInactive) query = query.eq('is_active', true);
+    const { data, error } = await query;
     if (error) throw error;
     return data ?? [];
   },

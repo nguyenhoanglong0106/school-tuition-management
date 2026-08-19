@@ -38,7 +38,7 @@ export default function Subjects() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await classService.getAllSubjects();
+      const data = await classService.getAllSubjects({ includeInactive: true });
       setSubjects(data);
     } finally {
       setLoading(false);
