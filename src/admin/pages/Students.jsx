@@ -106,7 +106,7 @@ export default function Students() {
     setDeleting(true);
     try {
       await studentService.softDelete(deleteTarget.id);
-      addToast('Đã xóa học viên');
+      addToast('Đã cho học viên nghỉ học và giữ lại lịch sử');
       setDeleteTarget(null);
       reload();
     } catch (err) {
@@ -257,7 +257,7 @@ export default function Students() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         loading={deleting}
-        title="Xóa học viên"
+        title="Cho học viên nghỉ học"
         message={`Bạn có chắc muốn xóa học viên "${deleteTarget?.full_name}"? Dữ liệu học phí, thanh toán và điểm danh sẽ được giữ lại.`}
       />
     </div>

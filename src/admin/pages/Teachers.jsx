@@ -81,7 +81,7 @@ export default function Teachers() {
     setDeleting(true);
     try {
       await teacherService.softDelete(deleteTarget.id);
-      addToast('Đã xóa giáo viên');
+      addToast('Đã ngừng hoạt động giáo viên và giữ lại lịch sử');
       setDeleteTarget(null);
       reload();
     } catch (err) {
@@ -163,7 +163,7 @@ export default function Teachers() {
       </Modal>
 
       <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting}
-        title="Xóa giáo viên" message={`Bạn có chắc muốn xóa giáo viên "${deleteTarget?.full_name}"?`} />
+        title="Ngừng hoạt động giáo viên" message={`Giáo viên "${deleteTarget?.full_name}" sẽ được ngừng hoạt động và giữ lại lịch sử.`} />
     </div>
   );
 }

@@ -106,7 +106,7 @@ export default function Classes() {
     setDeleting(true);
     try {
       await classService.softDelete(deleteTarget.id);
-      addToast('Đã hủy lớp học');
+      addToast('Đã hủy lớp học và giữ lại lịch sử');
       setDeleteTarget(null);
       reload();
     } catch (err) {
@@ -193,7 +193,7 @@ export default function Classes() {
       </Modal>
 
       <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting}
-        title="Hủy lớp học" message={`Bạn có chắc muốn hủy lớp "${deleteTarget?.class_name}"? Lịch sử học phí và điểm danh sẽ được giữ lại.`} />
+        title="Hủy lớp học và giữ lịch sử" message={`Lớp "${deleteTarget?.class_name}" sẽ được hủy. Lịch sử học phí và điểm danh vẫn được giữ lại.`} />
     </div>
   );
 }

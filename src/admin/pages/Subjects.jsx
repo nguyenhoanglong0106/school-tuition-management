@@ -145,9 +145,9 @@ export default function Subjects() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         loading={deleting}
-        title="Xóa môn học"
+        title="Ngừng hoạt động môn học"
         message={`Môn học "${deleteTarget?.name}" sẽ được ngừng hoạt động và không còn xuất hiện khi tạo lớp mới. Dữ liệu lớp học cũ vẫn được giữ lại.`}
-        confirmLabel="Xóa môn học"
+        confirmLabel="Ngừng hoạt động"
       />
     </div>
   );
