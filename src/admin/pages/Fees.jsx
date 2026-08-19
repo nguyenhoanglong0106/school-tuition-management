@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CreditCard, Layers, Download } from 'lucide-react';
+import { CreditCard, Layers, Download, BadgePercent } from 'lucide-react';
 import { feeService } from '@/services/feeService';
 import { classService } from '@/services/classService';
 import { useDataList } from '@/hooks/useDataList';
 import { useToast } from '@/contexts/ToastContext';
 import { DataTable } from '@/components/common/DataTable';
 import { Pagination, EmptyState } from '@/components/common/UI';
-import { Select, Input } from '@/components/common/Form';
+import { Select, Input, Textarea } from '@/components/common/Form';
 import { Modal } from '@/components/common/Modal';
 import { FeeStatusBadge } from '@/components/common/Badge';
 import { formatCurrency, formatDate, getCurrentMonthYear } from '@/utils/formatters';
@@ -22,6 +22,7 @@ export default function Fees() {
   const [classes, setClasses] = useState([]);
   const [summary, setSummary] = useState(null);
   const [batchModal, setBatchModal] = useState(false);
+  const [waiveTarget, setWaiveTarget] = useState(null);
 
   useEffect(() => {
     classService.getAll({ pageSize: 100 }).then((r) => setClasses(r.data));
@@ -57,6 +58,16 @@ export default function Fees() {
     { key: 'remaining_amount', header: 'Còn lại', render: (f) => <span className="font-semibold">{formatCurrency(f.remaining_amount)}</span> },
     { key: 'due_date', header: 'Hạn', render: (f) => formatDate(f.due_date) },
     { key: 'status', header: 'Trạng thái', render: (f) => <FeeStatusBadge status={feeService.computeEffectiveStatus(f)} /> },
+    {
+      key: 'actions', header: '', className: 'w-32',
+      render: (f) => {
+        const effStatus = feeService.computeEffectiveStatus(f);
+        if (effStatus === 'PAID' || effStatus === 'WAIVED') return null;
+        return (
+          <button onClick={() => setWaiveTarget(f)} className="p-2 rounded-lg hover:bg-amber-50 text-amber-600" title="Miễn giảm"><BadgePercent size={16} /></button>
+        );
+      },
+    },
   ];
 
   return (
@@ -93,6 +104,10 @@ export default function Fees() {
 
       {batchModal && (
         <BatchFeeModal classes={classes} onClose={() => setBatchModal(false)} onDone={() => { setBatchModal(false); reload(); feeService.getMonthSummary(month, year).then(setSummary); }} />
+      )}
+
+      {waiveTarget && (
+        <WaiveFeeModal fee={waiveTarget} onClose={() => setWaiveTarget(null)} onDone={() => { setWaiveTarget(null); reload(); feeService.getMonthSummary(month, year).then(setSummary); }} />
       )}
     </div>
   );
@@ -144,6 +159,41 @@ function BatchFeeModal({ classes, onClose, onDone }) {
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="btn btn-ghost flex-1">Hủy</button>
           <button type="submit" disabled={saving || !classId} className="btn-primary flex-1">{saving ? 'Đang tạo...' : 'Tạo học phí'}</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function WaiveFeeModal({ fee, onClose, onDone }) {
+  const { addToast } = useToast();
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await feeService.waiveFee(fee.id, note || null);
+      addToast('Đã miễn giảm khoản học phí');
+      onDone();
+    } catch (err) {
+      addToast(err.message ?? 'Không thể miễn giảm khoản học phí', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal isOpen onClose={onClose} title="Miễn giảm học phí">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <p className="text-sm text-slate-500">
+          Học viên <span className="font-medium text-slate-800">{fee.students?.full_name}</span> · Kỳ {fee.period_label} · Còn lại {formatCurrency(fee.remaining_amount)}
+        </p>
+        <Textarea label="Lý do (không bắt buộc)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ví dụ: học bổng, hỗ trợ khó khăn, sai sót khi lập phí..." />
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onClose} className="btn btn-ghost flex-1">Hủy</button>
+          <button type="submit" disabled={saving} className="btn-primary flex-1">{saving ? 'Đang xử lý...' : 'Miễn giảm'}</button>
         </div>
       </form>
     </Modal>

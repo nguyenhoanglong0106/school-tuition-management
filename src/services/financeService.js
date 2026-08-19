@@ -117,6 +117,30 @@ export const financeService = {
     return data;
   },
 
+  // All categories (active + inactive) — for management UI
+  async getAllCategories(type = null) {
+    let query = supabase
+      .from('financial_categories')
+      .select('*')
+      .order('type')
+      .order('name');
+    if (type) query = query.eq('type', type);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async updateCategory(id, updates) {
+    const { data, error } = await supabase
+      .from('financial_categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   // Generate transaction code client-side
   generateTransactionCode(type) {
     const now = new Date();

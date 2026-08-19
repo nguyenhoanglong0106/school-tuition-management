@@ -67,6 +67,52 @@ export const classService = {
       .update({ deleted_at: new Date().toISOString(), status: 'CANCELLED' })
       .eq('id', id);
     if (error) throw error;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const { error: studentsError } = await supabase
+      .from('class_students')
+      .update({ status: 'STOPPED', left_date: today })
+      .eq('class_id', id)
+      .eq('status', 'ACTIVE');
+    if (studentsError) throw studentsError;
+
+    const { error: sessionsError } = await supabase
+      .from('class_sessions')
+      .update({ status: 'CANCELLED' })
+      .eq('class_id', id)
+      .eq('status', 'SCHEDULED');
+    if (sessionsError) throw sessionsError;
+  },
+
+  // Impact preview for the "Hủy lớp" confirmation dialog
+  async getCancelImpact(id) {
+    const [studentsRes, feesRes, sessionsRes] = await Promise.all([
+      supabase
+        .from('class_students')
+        .select('*', { count: 'exact', head: true })
+        .eq('class_id', id)
+        .eq('status', 'ACTIVE'),
+      supabase
+        .from('student_fees')
+        .select('remaining_amount')
+        .eq('class_id', id)
+        .in('status', ['UNPAID', 'PARTIAL', 'OVERDUE']),
+      supabase
+        .from('class_sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('class_id', id)
+        .eq('status', 'SCHEDULED'),
+    ]);
+    if (studentsRes.error) throw studentsRes.error;
+    if (feesRes.error) throw feesRes.error;
+    if (sessionsRes.error) throw sessionsRes.error;
+
+    return {
+      activeStudentCount: studentsRes.count ?? 0,
+      unpaidTotal: (feesRes.data ?? []).reduce((s, f) => s + Number(f.remaining_amount), 0),
+      upcomingSessionCount: sessionsRes.count ?? 0,
+    };
   },
 
   // Class Students

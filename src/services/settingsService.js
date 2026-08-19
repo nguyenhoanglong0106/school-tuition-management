@@ -55,6 +55,17 @@ export const settingsService = {
   },
 
   async updateBankAccount(id, updates) {
+    if (updates.is_active === false) {
+      const { data: current } = await supabase
+        .from('bank_accounts')
+        .select('is_default')
+        .eq('id', id)
+        .single();
+      if (current?.is_default) {
+        throw new Error('Không thể tắt tài khoản đang đặt làm mặc định. Vui lòng đặt tài khoản khác làm mặc định trước.');
+      }
+    }
+
     const { data, error } = await supabase
       .from('bank_accounts')
       .update(updates)

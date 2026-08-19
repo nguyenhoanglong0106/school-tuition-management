@@ -45,6 +45,7 @@ export default function Classes() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteMessage, setDeleteMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -102,6 +103,25 @@ export default function Classes() {
     }
   };
 
+  const openDeleteConfirm = async (c) => {
+    setDeleteTarget(c);
+    setDeleteMessage(`Lớp "${c.class_name}" sẽ được hủy. Lịch sử học phí và điểm danh vẫn được giữ lại.`);
+    try {
+      const impact = await classService.getCancelImpact(c.id);
+      const parts = [];
+      if (impact.activeStudentCount > 0) parts.push(`còn ${impact.activeStudentCount} học viên đang học`);
+      if (impact.unpaidTotal > 0) parts.push(`còn nợ ${formatCurrency(impact.unpaidTotal)} học phí chưa thu`);
+
+      let message = parts.length ? `Lớp này ${parts.join(' và ')}.` : '';
+      if (impact.upcomingSessionCount > 0) {
+        message += `${message ? ' ' : ''}${impact.upcomingSessionCount} buổi học sắp tới sẽ bị hủy theo.`;
+      }
+      if (message) setDeleteMessage(`${message} Bạn có chắc muốn hủy lớp?`);
+    } catch {
+      // giữ thông báo mặc định nếu không lấy được thông tin ảnh hưởng
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -137,7 +157,7 @@ export default function Classes() {
       render: (c) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {isAdmin && <button onClick={() => openEdit(c)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><Pencil size={16} /></button>}
-          {isAdmin && <button onClick={() => setDeleteTarget(c)} className="p-2 rounded-lg hover:bg-red-50 text-red-500"><Trash2 size={16} /></button>}
+          {isAdmin && <button onClick={() => openDeleteConfirm(c)} className="p-2 rounded-lg hover:bg-red-50 text-red-500"><Trash2 size={16} /></button>}
         </div>
       ),
     },
@@ -193,7 +213,7 @@ export default function Classes() {
       </Modal>
 
       <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting}
-        title="Hủy lớp học và giữ lịch sử" message={`Lớp "${deleteTarget?.class_name}" sẽ được hủy. Lịch sử học phí và điểm danh vẫn được giữ lại.`} />
+        title="Hủy lớp học và giữ lịch sử" message={deleteMessage} />
     </div>
   );
 }

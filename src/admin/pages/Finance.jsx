@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Plus, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Plus, Download, Tags } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { financeService } from '@/services/financeService';
 import { useDataList } from '@/hooks/useDataList';
@@ -26,6 +26,7 @@ export default function Finance() {
   const [chartData, setChartData] = useState([]);
   const [chartLoading, setChartLoading] = useState(true);
   const [addModal, setAddModal] = useState(false);
+  const [categoriesModal, setCategoriesModal] = useState(false);
 
   useEffect(() => {
     if (preset !== 'custom') setRange(RANGE_PRESETS[preset]());
@@ -70,6 +71,7 @@ export default function Finance() {
           <p className="text-slate-500 text-sm mt-1">Theo dõi dòng tiền của trung tâm</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setCategoriesModal(true)} className="btn btn-ghost"><Tags size={16} /> Quản lý danh mục</button>
           <button onClick={handleExport} className="btn btn-ghost"><Download size={16} /> Xuất Excel</button>
           <button onClick={() => setAddModal(true)} className="btn-primary"><Plus size={16} /> Thêm khoản chi</button>
         </div>
@@ -114,6 +116,7 @@ export default function Finance() {
       {!loading && data.length > 0 && <Pagination page={page} pageSize={pageSize} total={count} onPageChange={setPage} onPageSizeChange={setPageSize} />}
 
       {addModal && <AddExpenseModal onClose={() => setAddModal(false)} onDone={() => { setAddModal(false); reload(); financeService.getSummary(range.from, range.to).then(setSummary); }} />}
+      {categoriesModal && <ManageCategoriesModal onClose={() => setCategoriesModal(false)} />}
     </div>
   );
 }
@@ -170,5 +173,105 @@ function AddExpenseModal({ onClose, onDone }) {
         </div>
       </form>
     </Modal>
+  );
+}
+
+function ManageCategoriesModal({ onClose }) {
+  const { addToast } = useToast();
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ name: '', type: 'EXPENSE' });
+  const [creating, setCreating] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await financeService.getAllCategories();
+      setCategories(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggle = async (cat) => {
+    setTogglingId(cat.id);
+    try {
+      const updated = await financeService.updateCategory(cat.id, { is_active: !cat.is_active });
+      setCategories((prev) => prev.map((c) => (c.id === cat.id ? updated : c)));
+      addToast(updated.is_active ? 'Đã kích hoạt danh mục' : 'Đã ẩn danh mục');
+    } catch (err) {
+      addToast(err.message ?? 'Không thể cập nhật danh mục', 'error');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setCreating(true);
+    try {
+      const created = await financeService.createCategory({ name: form.name.trim(), type: form.type, is_active: true });
+      setCategories((prev) => [...prev, created]);
+      setForm({ name: '', type: form.type });
+      addToast('Đã thêm danh mục');
+    } catch (err) {
+      addToast(err.message ?? 'Không thể thêm danh mục', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const income = categories.filter((c) => c.type === 'INCOME');
+  const expense = categories.filter((c) => c.type === 'EXPENSE');
+
+  return (
+    <Modal isOpen onClose={onClose} title="Quản lý danh mục thu chi" size="lg">
+      <form onSubmit={handleCreate} className="flex gap-2 items-end mb-5 pb-5 border-b border-slate-100">
+        <Input label="Tên danh mục mới" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="flex-1" />
+        <Select label="Loại" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} placeholder={null}
+          options={[{ value: 'EXPENSE', label: 'Chi' }, { value: 'INCOME', label: 'Thu' }]} className="w-32" />
+        <button type="submit" disabled={creating} className="btn-primary flex-shrink-0">{creating ? 'Đang thêm...' : 'Thêm'}</button>
+      </form>
+
+      {loading ? (
+        <Skeleton className="h-40" />
+      ) : categories.length === 0 ? (
+        <EmptyState icon={<Tags size={32} />} title="Chưa có danh mục nào" />
+      ) : (
+        <div className="space-y-5">
+          <CategoryGroup title="Khoản thu" items={income} onToggle={handleToggle} togglingId={togglingId} />
+          <CategoryGroup title="Khoản chi" items={expense} onToggle={handleToggle} togglingId={togglingId} />
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function CategoryGroup({ title, items, onToggle, togglingId }) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{title}</p>
+      <div className="space-y-1.5">
+        {items.map((c) => (
+          <div key={c.id} className={`flex items-center justify-between px-3 py-2 rounded-xl border border-slate-100 ${c.is_active ? '' : 'opacity-50'}`}>
+            <span className={`text-sm ${c.is_active ? 'text-slate-700' : 'text-slate-400'}`}>{c.name}</span>
+            <button
+              onClick={() => onToggle(c)}
+              disabled={togglingId === c.id}
+              className={c.is_active ? 'btn-ghost btn-sm' : 'btn-primary btn-sm'}
+            >
+              {togglingId === c.id ? '...' : c.is_active ? 'Ẩn' : 'Kích hoạt'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

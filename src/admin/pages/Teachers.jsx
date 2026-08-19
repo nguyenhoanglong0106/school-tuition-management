@@ -31,6 +31,7 @@ export default function Teachers() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteActiveClasses, setDeleteActiveClasses] = useState([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -77,12 +78,27 @@ export default function Teachers() {
     }
   };
 
+  const confirmDelete = async (t) => {
+    setDeleteTarget(t);
+    try {
+      const classes = await teacherService.getTeacherClasses(t.id);
+      setDeleteActiveClasses(classes.filter((c) => c.status === 'ACTIVE' || c.status === 'PAUSED'));
+    } catch {
+      setDeleteActiveClasses([]);
+    }
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteTarget(null);
+    setDeleteActiveClasses([]);
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
       await teacherService.softDelete(deleteTarget.id);
       addToast('Đã ngừng hoạt động giáo viên và giữ lại lịch sử');
-      setDeleteTarget(null);
+      closeDeleteConfirm();
       reload();
     } catch (err) {
       addToast(err.message ?? 'Không thể xóa giáo viên', 'error');
@@ -90,6 +106,10 @@ export default function Teachers() {
       setDeleting(false);
     }
   };
+
+  const deleteMessage = deleteActiveClasses.length > 0
+    ? `Giáo viên "${deleteTarget?.full_name}" đang phụ trách ${deleteActiveClasses.length} lớp: ${deleteActiveClasses.map((c) => c.class_name).join(', ')}. Các lớp này sẽ mất người phụ trách nếu tiếp tục.`
+    : `Giáo viên "${deleteTarget?.full_name}" sẽ được ngừng hoạt động và giữ lại lịch sử.`;
 
   const columns = [
     {
@@ -115,7 +135,7 @@ export default function Teachers() {
       render: (t) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => openEdit(t)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><Pencil size={16} /></button>
-          <button onClick={() => setDeleteTarget(t)} className="p-2 rounded-lg hover:bg-red-50 text-red-500"><Trash2 size={16} /></button>
+          <button onClick={() => confirmDelete(t)} className="p-2 rounded-lg hover:bg-red-50 text-red-500"><Trash2 size={16} /></button>
         </div>
       ),
     },
@@ -162,8 +182,8 @@ export default function Teachers() {
         </form>
       </Modal>
 
-      <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting}
-        title="Ngừng hoạt động giáo viên" message={`Giáo viên "${deleteTarget?.full_name}" sẽ được ngừng hoạt động và giữ lại lịch sử.`} />
+      <ConfirmDialog isOpen={!!deleteTarget} onClose={closeDeleteConfirm} onConfirm={handleDelete} loading={deleting}
+        title="Ngừng hoạt động giáo viên" message={deleteMessage} />
     </div>
   );
 }

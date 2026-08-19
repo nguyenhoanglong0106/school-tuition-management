@@ -42,6 +42,7 @@ export default function Students() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteClasses, setDeleteClasses] = useState([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -102,12 +103,23 @@ export default function Students() {
     }
   };
 
+  const openDeleteConfirm = async (student) => {
+    setDeleteTarget(student);
+    try {
+      const classes = await studentService.getActiveClasses(student.id);
+      setDeleteClasses(classes);
+    } catch {
+      setDeleteClasses([]);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
       await studentService.softDelete(deleteTarget.id);
       addToast('Đã cho học viên nghỉ học và giữ lại lịch sử');
       setDeleteTarget(null);
+      setDeleteClasses([]);
       reload();
     } catch (err) {
       addToast(err.message ?? 'Không thể xóa học viên', 'error');
@@ -165,7 +177,7 @@ export default function Students() {
             </button>
           )}
           {isAdmin && (
-            <button onClick={() => setDeleteTarget(s)} className="p-2 rounded-lg hover:bg-red-50 text-red-500" title="Xóa">
+            <button onClick={() => openDeleteConfirm(s)} className="p-2 rounded-lg hover:bg-red-50 text-red-500" title="Xóa">
               <Trash2 size={16} />
             </button>
           )}
@@ -254,11 +266,15 @@ export default function Students() {
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => { setDeleteTarget(null); setDeleteClasses([]); }}
         onConfirm={handleDelete}
         loading={deleting}
         title="Cho học viên nghỉ học"
-        message={`Bạn có chắc muốn xóa học viên "${deleteTarget?.full_name}"? Dữ liệu học phí, thanh toán và điểm danh sẽ được giữ lại.`}
+        message={
+          deleteClasses.length > 0
+            ? `Học viên "${deleteTarget?.full_name}" đang học ${deleteClasses.length} lớp: ${deleteClasses.map((c) => c.classes?.class_name).join(', ')}. Các lớp này sẽ được đánh dấu đã nghỉ. Dữ liệu học phí, thanh toán và điểm danh sẽ được giữ lại.`
+            : `Bạn có chắc muốn xóa học viên "${deleteTarget?.full_name}"? Dữ liệu học phí, thanh toán và điểm danh sẽ được giữ lại.`
+        }
       />
     </div>
   );

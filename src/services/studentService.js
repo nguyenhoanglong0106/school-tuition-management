@@ -72,6 +72,23 @@ export const studentService = {
       .update({ deleted_at: new Date().toISOString(), status: 'STOPPED' })
       .eq('id', id);
     if (error) throw error;
+
+    const { error: classError } = await supabase
+      .from('class_students')
+      .update({ status: 'STOPPED', left_date: new Date().toISOString().split('T')[0] })
+      .eq('student_id', id)
+      .eq('status', 'ACTIVE');
+    if (classError) throw classError;
+  },
+
+  async getActiveClasses(studentId) {
+    const { data, error } = await supabase
+      .from('class_students')
+      .select(`id, class_id, classes ( id, class_name )`)
+      .eq('student_id', studentId)
+      .eq('status', 'ACTIVE');
+    if (error) throw error;
+    return data ?? [];
   },
 
   async getStudentClasses(studentId) {

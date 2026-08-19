@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCheck, Save, Printer, ClipboardCheck } from 'lucide-react';
+import { CheckCheck, Save, Printer, ClipboardCheck, Ban } from 'lucide-react';
 import { scheduleService } from '@/services/scheduleService';
 import { classService } from '@/services/classService';
 import { attendanceService } from '@/services/attendanceService';
 import { useToast } from '@/contexts/ToastContext';
 import { Select } from '@/components/common/Form';
+import { ConfirmDialog } from '@/components/common/Modal';
 import { Avatar, Skeleton, EmptyState } from '@/components/common/UI';
 import { ATTENDANCE_STATUS } from '@/constants';
 import { formatDate, formatTime } from '@/utils/formatters';
@@ -31,6 +32,8 @@ export default function Attendance() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     classService.getAll({ pageSize: 100, status: 'ACTIVE' }).then((r) => setClasses(r.data));
@@ -48,13 +51,16 @@ export default function Attendance() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
+  const loadSessionOptions = async () => {
     if (!classId || !date) { setSessionOptions([]); return; }
-    scheduleService.getSessions({ classId, dateFrom: date, dateTo: date, pageSize: 20 }).then((r) => {
-      setSessionOptions(r.data);
-      if (r.data.length === 1) setSessionId(r.data[0].id);
-      else if (!r.data.find((s) => s.id === sessionId)) setSessionId('');
-    });
+    const r = await scheduleService.getSessions({ classId, dateFrom: date, dateTo: date, pageSize: 20 });
+    setSessionOptions(r.data);
+    if (r.data.length === 1) setSessionId(r.data[0].id);
+    else if (!r.data.find((s) => s.id === sessionId)) setSessionId('');
+  };
+
+  useEffect(() => {
+    loadSessionOptions();
   }, [classId, date]);
 
   useEffect(() => {
@@ -88,6 +94,21 @@ export default function Attendance() {
       addToast(err.message ?? 'Không thể lưu điểm danh', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancelSession = async () => {
+    if (cancelling) return; // guard against double-submit
+    setCancelling(true);
+    try {
+      await scheduleService.cancelSession(sessionId);
+      addToast('Đã hủy buổi học');
+      setShowCancelConfirm(false);
+      await loadSessionOptions();
+    } catch (err) {
+      addToast(err.message ?? 'Không thể hủy buổi học', 'error');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -125,45 +146,63 @@ export default function Attendance() {
             <div className="flex gap-2">
               <button onClick={() => printAttendanceSheet(currentSession ?? { session_date: date }, rows)} className="btn btn-ghost btn-sm"><Printer size={14} /> In</button>
               <button onClick={() => markAll('PRESENT')} className="btn btn-outline btn-sm"><CheckCheck size={14} /> Tất cả có mặt</button>
+              {currentSession?.status === 'SCHEDULED' && (
+                <button onClick={() => setShowCancelConfirm(true)} className="btn btn-outline btn-sm text-red-600 border-red-200 hover:bg-red-50"><Ban size={14} /> Hủy buổi học</button>
+              )}
             </div>
           </div>
 
-          {rows.length === 0 ? (
+          {currentSession?.status === 'CANCELLED' ? (
+            <EmptyState icon={<Ban size={32} />} title="Buổi học đã bị hủy" description="Buổi học này đã bị hủy. Không thể điểm danh cho buổi học đã hủy." />
+          ) : rows.length === 0 ? (
             <EmptyState icon="👥" title="Lớp chưa có học viên nào" />
           ) : (
-            <div className="space-y-2">
-              {rows.map((r) => (
-                <div key={r.student.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50">
-                  <Avatar name={r.student.full_name} src={r.student.avatar_url} size={9} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-800 truncate">{r.student.full_name}</p>
-                    <p className="text-xs text-slate-400">{r.student.student_code}</p>
+            <>
+              <div className="space-y-2">
+                {rows.map((r) => (
+                  <div key={r.student.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50">
+                    <Avatar name={r.student.full_name} src={r.student.avatar_url} size={9} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-800 truncate">{r.student.full_name}</p>
+                      <p className="text-xs text-slate-400">{r.student.student_code}</p>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap justify-end">
+                      {Object.entries(ATTENDANCE_STATUS).map(([key, s]) => (
+                        <button
+                          key={key}
+                          onClick={() => setStatus(r.student.id, key)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            r.status === key ? ACTIVE_RING_CLASSES[s.color] : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
+                        >
+                          {s.icon} {s.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-1.5 flex-wrap justify-end">
-                    {Object.entries(ATTENDANCE_STATUS).map(([key, s]) => (
-                      <button
-                        key={key}
-                        onClick={() => setStatus(r.student.id, key)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                          r.status === key ? ACTIVE_RING_CLASSES[s.color] : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                        }`}
-                      >
-                        {s.icon} {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
 
-          <div className="pt-3 border-t border-slate-100">
-            <button onClick={handleSave} disabled={saving || rows.length === 0} className="btn-primary w-full sm:w-auto">
-              <Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu điểm danh'}
-            </button>
-          </div>
+              <div className="pt-3 border-t border-slate-100">
+                <button onClick={handleSave} disabled={saving || rows.length === 0} className="btn-primary w-full sm:w-auto">
+                  <Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu điểm danh'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelSession}
+        title="Hủy buổi học"
+        message="Bạn có chắc chắn muốn hủy buổi học này? Sau khi hủy, buổi học sẽ không thể dùng để điểm danh nữa."
+        confirmLabel="Hủy buổi học"
+        confirmClass="btn-danger"
+        loading={cancelling}
+      />
     </div>
   );
 }
