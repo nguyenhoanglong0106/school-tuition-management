@@ -92,14 +92,15 @@ export default function ClassDetail() {
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-primary-600">{formatCurrency(cls.tuition_fee)}</p>
-            <p className="text-xs text-slate-400">Học phí / {cls.fee_cycle === 'MONTHLY' ? 'tháng' : 'khóa'}</p>
+            <p className="text-xs text-slate-400">Học phí / {cls.fee_cycle === 'MONTHLY' ? 'tháng' : cls.fee_cycle === 'PER_SESSION' ? 'buổi' : 'khóa'}</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-6 pt-6 border-t border-slate-100 text-sm">
           <div><p className="text-slate-400 text-xs">Giáo viên</p><p className="font-medium text-slate-700">{cls.teachers?.full_name ?? '—'}</p></div>
           <div><p className="text-slate-400 text-xs">Phòng</p><p className="font-medium text-slate-700">{cls.room ?? '—'}</p></div>
           <div><p className="text-slate-400 text-xs">Khai giảng</p><p className="font-medium text-slate-700">{formatDate(cls.start_date)}</p></div>
           <div><p className="text-slate-400 text-xs">Sĩ số</p><p className="font-medium text-slate-700">{activeStudents.length}/{cls.capacity}</p></div>
+          <div><p className="text-slate-400 text-xs">Phí mỗi buổi</p><p className="font-medium text-slate-700">{cls.fee_cycle === 'PER_SESSION' ? formatCurrency(cls.session_fee) : '—'}</p></div>
         </div>
       </div>
 
@@ -124,13 +125,14 @@ export default function ClassDetail() {
               ) : (
                 <div className="table-wrapper">
                   <table className="data-table">
-                    <thead><tr><th>Mã HV</th><th>Họ tên</th><th>Ngày vào</th><th>Ưu đãi</th><th>Trạng thái</th><th></th></tr></thead>
+                    <thead><tr><th>Mã HV</th><th>Họ tên</th><th>Ngày vào</th><th>Hình thức</th><th>Ưu đãi</th><th>Trạng thái</th><th></th></tr></thead>
                     <tbody>
                       {students.map((cs) => (
                         <tr key={cs.id}>
                           <td>{cs.students?.student_code}</td>
                           <td className="font-medium">{cs.students?.full_name}</td>
                           <td>{formatDate(cs.joined_date)}</td>
+                          <td>{cs.billing_type_override === 'PER_SESSION' ? 'Theo buổi' : cs.billing_type_override === 'MONTHLY' ? 'Theo tháng' : 'Mặc định lớp'}</td>
                           <td>{cs.discount_amount > 0 ? formatCurrency(cs.discount_amount) : '—'}</td>
                           <td><span className={`badge ${cs.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>{cs.status}</span></td>
                           <td>
@@ -207,6 +209,9 @@ function AddStudentModal({ classId, existingIds, onClose, onAdded }) {
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
   const [discount, setDiscount] = useState(0);
+  const [billingType, setBillingType] = useState('');
+  const [monthlyFee, setMonthlyFee] = useState(0);
+  const [sessionFee, setSessionFee] = useState(0);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -222,7 +227,12 @@ function AddStudentModal({ classId, existingIds, onClose, onAdded }) {
     if (!selected) return;
     setSaving(true);
     try {
-      await classService.addStudentToClass(classId, selected.id, { discount_amount: Number(discount) || 0 });
+      await classService.addStudentToClass(classId, selected.id, {
+        discount_amount: Number(discount) || 0,
+        billing_type_override: billingType || null,
+        custom_tuition_fee: billingType === 'MONTHLY' ? Number(monthlyFee) || 0 : null,
+        session_fee_override: billingType === 'PER_SESSION' ? Number(sessionFee) || 0 : null,
+      });
       addToast('Đã thêm học viên vào lớp');
       onAdded();
     } catch (err) {
@@ -255,6 +265,9 @@ function AddStudentModal({ classId, existingIds, onClose, onAdded }) {
               <button onClick={() => setSelected(null)} className="text-xs text-primary-600 underline">Đổi</button>
             </div>
             <Input label="Số tiền ưu đãi (nếu có)" type="number" min="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+            <Select label="Hình thức học phí" value={billingType} onChange={(e) => setBillingType(e.target.value)} options={[{ value: '', label: 'Theo mặc định của lớp' }, { value: 'MONTHLY', label: 'Theo tháng' }, { value: 'PER_SESSION', label: 'Theo buổi trong tháng' }]} />
+            {billingType === 'MONTHLY' && <Input label="Phí tháng (ghi đè)" type="number" min="0" value={monthlyFee} onChange={(e) => setMonthlyFee(e.target.value)} />}
+            {billingType === 'PER_SESSION' && <Input label="Phí mỗi buổi (ghi đè)" type="number" min="0" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} />}
             <div className="flex gap-3 pt-2">
               <button onClick={onClose} className="btn btn-ghost flex-1">Hủy</button>
               <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? 'Đang thêm...' : 'Thêm vào lớp'}</button>

@@ -22,6 +22,7 @@ const schema = z.object({
   subject_id: z.string().min(1, 'Vui lòng chọn môn học'),
   teacher_id: z.string().optional().or(z.literal('')),
   tuition_fee: z.coerce.number().min(0, 'Học phí không được âm'),
+  session_fee: z.coerce.number().min(0, 'Phí mỗi buổi không được âm'),
   fee_cycle: z.string(),
   start_date: z.string().optional().or(z.literal('')),
   end_date: z.string().optional().or(z.literal('')),
@@ -65,7 +66,7 @@ export default function Classes() {
 
   const openCreate = () => {
     setEditing(null);
-    reset({ status: 'ACTIVE', fee_cycle: 'MONTHLY', capacity: 30, class_name: '', subject_id: '', teacher_id: '', tuition_fee: 0 });
+    reset({ status: 'ACTIVE', fee_cycle: 'MONTHLY', capacity: 30, class_name: '', subject_id: '', teacher_id: '', tuition_fee: 0, session_fee: 0 });
     setModalOpen(true);
   };
 
@@ -73,7 +74,7 @@ export default function Classes() {
     setEditing(c);
     reset({
       class_name: c.class_name, subject_id: c.subject_id ?? '', teacher_id: c.teacher_id ?? '',
-      tuition_fee: c.tuition_fee, fee_cycle: c.fee_cycle, start_date: c.start_date ?? '', end_date: c.end_date ?? '',
+      tuition_fee: c.tuition_fee, session_fee: c.session_fee ?? 0, fee_cycle: c.fee_cycle, start_date: c.start_date ?? '', end_date: c.end_date ?? '',
       capacity: c.capacity ?? 30, room: c.room ?? '', description: c.description ?? '', status: c.status,
     });
     setModalOpen(true);
@@ -176,6 +177,7 @@ export default function Classes() {
             <Select label="Giáo viên phụ trách" options={teachers.map((t) => ({ value: t.id, label: t.full_name }))} {...register('teacher_id')} />
             <Input label="Học phí" type="number" min="0" required {...register('tuition_fee')} error={errors.tuition_fee?.message} />
             <Select label="Chu kỳ thu phí" options={Object.entries(FEE_CYCLE).map(([value, label]) => ({ value, label }))} {...register('fee_cycle')} />
+            <Input label="Phí mỗi buổi (nếu theo buổi)" type="number" min="0" {...register('session_fee')} error={errors.session_fee?.message} />
             <Input label="Ngày khai giảng" type="date" {...register('start_date')} />
             <Input label="Ngày kết thúc" type="date" {...register('end_date')} error={errors.end_date?.message} />
             <Input label="Sĩ số tối đa" type="number" min="1" {...register('capacity')} />

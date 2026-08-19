@@ -57,6 +57,7 @@ export const ATTENDANCE_STATUS = {
 // Fee cycle
 export const FEE_CYCLE = {
   MONTHLY: 'Hàng tháng',
+  PER_SESSION: 'Theo buổi trong tháng',
   COURSE: 'Theo khóa',
   CUSTOM: 'Tùy chỉnh',
 };
