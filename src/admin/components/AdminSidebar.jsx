@@ -8,7 +8,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { authService } from '@/services/authService';
-import { Avatar } from '@/components/common/UI';
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -36,7 +35,7 @@ const TEACHER_NAV_ITEMS = [
 ];
 
 export function AdminSidebar({ open, onClose }) {
-  const { profile, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { schoolName, logoUrl } = useSettings();
   const navigate = useNavigate();
   const items = isAdmin ? NAV_ITEMS : TEACHER_NAV_ITEMS;
@@ -102,15 +101,8 @@ export function AdminSidebar({ open, onClose }) {
           ))}
         </nav>
 
-        {/* User Info */}
+        {/* Logout */}
         <div className="p-4 border-t border-slate-700/50">
-          <div className="flex items-center gap-3 mb-3">
-            <Avatar name={profile?.full_name} src={profile?.avatar_url} size={8} />
-            <div className="overflow-hidden flex-1">
-              <p className="text-white text-sm font-medium truncate">{profile?.full_name}</p>
-              <p className="text-slate-400 text-xs">{profile?.role === 'ADMIN' ? 'Quản trị viên' : 'Giáo viên'}</p>
-            </div>
-          </div>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-slate-800 text-sm font-medium transition-colors"

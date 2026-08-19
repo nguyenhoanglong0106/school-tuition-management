@@ -7,7 +7,7 @@ export const Input = forwardRef(function Input(
   ref
 ) {
   return (
-    <div className="w-full">
+    <div className={clsx('w-full', className)}>
       {label && (
         <label className="form-label">
           {label}
@@ -16,7 +16,7 @@ export const Input = forwardRef(function Input(
       )}
       <input
         ref={ref}
-        className={clsx('form-input', error && 'form-input-error', className)}
+        className={clsx('form-input', error && 'form-input-error')}
         {...props}
       />
       {error && <p className="form-error">{error}</p>}
@@ -38,7 +38,7 @@ export const MoneyInput = forwardRef(function MoneyInput(
   };
 
   return (
-    <div className="w-full">
+    <div className={clsx('w-full', className)}>
       {label && (
         <label className="form-label">
           {label}
@@ -49,7 +49,7 @@ export const MoneyInput = forwardRef(function MoneyInput(
         ref={ref}
         {...props}
         inputMode="numeric"
-        className={clsx('form-input', error && 'form-input-error', className)}
+        className={clsx('form-input', error && 'form-input-error')}
         value={displayValue}
         onChange={handleChange}
       />
@@ -64,7 +64,7 @@ export const Textarea = forwardRef(function Textarea(
   ref
 ) {
   return (
-    <div className="w-full">
+    <div className={clsx('w-full', className)}>
       {label && (
         <label className="form-label">
           {label}
@@ -74,7 +74,7 @@ export const Textarea = forwardRef(function Textarea(
       <textarea
         ref={ref}
         rows={rows}
-        className={clsx('form-input resize-none', error && 'form-input-error', className)}
+        className={clsx('form-input resize-none', error && 'form-input-error')}
         {...props}
       />
       {error && <p className="form-error">{error}</p>}
@@ -88,7 +88,7 @@ export const Select = forwardRef(function Select(
   ref
 ) {
   return (
-    <div className="w-full">
+    <div className={clsx('w-full', className)}>
       {label && (
         <label className="form-label">
           {label}
@@ -97,7 +97,7 @@ export const Select = forwardRef(function Select(
       )}
       <select
         ref={ref}
-        className={clsx('form-input', error && 'form-input-error', className)}
+        className={clsx('form-input', error && 'form-input-error')}
         {...props}
       >
         {placeholder && <option value="">{placeholder}</option>}
