@@ -8,7 +8,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs } from '@/components/common/Tabs';
 import { Skeleton, EmptyState } from '@/components/common/UI';
-import { Input, Select, SearchInput as Search2 } from '@/components/common/Form';
+import { Input, MoneyInput, Select, SearchInput as Search2 } from '@/components/common/Form';
 import { Modal, ConfirmDialog } from '@/components/common/Modal';
 import { ClassStatusBadge } from '@/components/common/Badge';
 import { formatCurrency, formatDate, formatTime, getDayOfWeekLabel } from '@/utils/formatters';
@@ -264,10 +264,10 @@ function AddStudentModal({ classId, existingIds, onClose, onAdded }) {
               <span className="font-medium text-primary-700">{selected.full_name} ({selected.student_code})</span>
               <button onClick={() => setSelected(null)} className="text-xs text-primary-600 underline">Đổi</button>
             </div>
-            <Input label="Số tiền ưu đãi (nếu có)" type="number" min="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+            <MoneyInput label="Số tiền ưu đãi (nếu có)" value={discount} onChange={(e) => setDiscount(e.target.value)} />
             <Select label="Hình thức học phí" value={billingType} onChange={(e) => setBillingType(e.target.value)} options={[{ value: '', label: 'Theo mặc định của lớp' }, { value: 'MONTHLY', label: 'Theo tháng' }, { value: 'PER_SESSION', label: 'Theo buổi trong tháng' }]} />
-            {billingType === 'MONTHLY' && <Input label="Phí tháng (ghi đè)" type="number" min="0" value={monthlyFee} onChange={(e) => setMonthlyFee(e.target.value)} />}
-            {billingType === 'PER_SESSION' && <Input label="Phí mỗi buổi (ghi đè)" type="number" min="0" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} />}
+            {billingType === 'MONTHLY' && <MoneyInput label="Phí tháng (ghi đè)" value={monthlyFee} onChange={(e) => setMonthlyFee(e.target.value)} />}
+            {billingType === 'PER_SESSION' && <MoneyInput label="Phí mỗi buổi (ghi đè)" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} />}
             <div className="flex gap-3 pt-2">
               <button onClick={onClose} className="btn btn-ghost flex-1">Hủy</button>
               <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">{saving ? 'Đang thêm...' : 'Thêm vào lớp'}</button>

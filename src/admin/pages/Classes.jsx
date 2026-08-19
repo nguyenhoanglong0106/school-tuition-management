@@ -11,7 +11,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable } from '@/components/common/DataTable';
 import { Pagination, EmptyState } from '@/components/common/UI';
-import { SearchInput, Select, Input, Textarea } from '@/components/common/Form';
+import { SearchInput, Select, Input, MoneyInput, Textarea } from '@/components/common/Form';
 import { Modal, ConfirmDialog } from '@/components/common/Modal';
 import { ClassStatusBadge } from '@/components/common/Badge';
 import { formatCurrency, formatDate } from '@/utils/formatters';
@@ -175,9 +175,9 @@ export default function Classes() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select label="Môn học" required options={subjects.map((s) => ({ value: s.id, label: s.name }))} {...register('subject_id')} error={errors.subject_id?.message} />
             <Select label="Giáo viên phụ trách" options={teachers.map((t) => ({ value: t.id, label: t.full_name }))} {...register('teacher_id')} />
-            <Input label="Học phí" type="number" min="0" required {...register('tuition_fee')} error={errors.tuition_fee?.message} />
+            <MoneyInput label="Học phí" required {...register('tuition_fee')} error={errors.tuition_fee?.message} />
             <Select label="Chu kỳ thu phí" options={Object.entries(FEE_CYCLE).map(([value, label]) => ({ value, label }))} {...register('fee_cycle')} />
-            <Input label="Phí mỗi buổi (nếu theo buổi)" type="number" min="0" {...register('session_fee')} error={errors.session_fee?.message} />
+            <MoneyInput label="Phí mỗi buổi (nếu theo buổi)" {...register('session_fee')} error={errors.session_fee?.message} />
             <Input label="Ngày khai giảng" type="date" {...register('start_date')} />
             <Input label="Ngày kết thúc" type="date" {...register('end_date')} error={errors.end_date?.message} />
             <Input label="Sĩ số tối đa" type="number" min="1" {...register('capacity')} />

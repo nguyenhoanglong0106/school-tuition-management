@@ -24,6 +24,40 @@ export const Input = forwardRef(function Input(
   );
 });
 
+// VND amount input: displays thousands separators while emitting digits only.
+export const MoneyInput = forwardRef(function MoneyInput(
+  { label, error, required, className = '', value = '', onChange, ...props },
+  ref
+) {
+  const rawValue = String(value ?? '').replace(/\D/g, '');
+  const displayValue = rawValue ? Number(rawValue).toLocaleString('vi-VN') : '';
+
+  const handleChange = (event) => {
+    const digits = event.target.value.replace(/\D/g, '');
+    onChange?.({ target: { ...event.target, value: digits } });
+  };
+
+  return (
+    <div className="w-full">
+      {label && (
+        <label className="form-label">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      <input
+        ref={ref}
+        {...props}
+        inputMode="numeric"
+        className={clsx('form-input', error && 'form-input-error', className)}
+        value={displayValue}
+        onChange={handleChange}
+      />
+      {error && <p className="form-error">{error}</p>}
+    </div>
+  );
+});
+
 // Textarea
 export const Textarea = forwardRef(function Textarea(
   { label, error, required, rows = 3, className = '', ...props },
