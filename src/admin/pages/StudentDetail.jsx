@@ -29,7 +29,7 @@ export default function StudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isTeacher } = useAuth();
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('info');
@@ -117,7 +117,7 @@ export default function StudentDetail() {
             </div>
             <p className="text-slate-400 text-sm">{student.student_code}</p>
           </div>
-          {isAdmin && (
+          {(isAdmin || isTeacher) && (
             <div className="flex items-center gap-2">
               {student.profile_id ? (
                 <span className="badge badge-success"><ShieldCheck size={12} /> Đã có tài khoản</span>
@@ -293,7 +293,7 @@ function InfoTabContent({ student }) {
 
 function CreateAccountModal({ student, onClose, onCreated }) {
   const { addToast } = useToast();
-  const [email, setEmail] = useState(student.email ?? '');
+  const [loginName, setLoginName] = useState(student.login_name ?? student.student_code);
   const [password, setPassword] = useState(accountService.generateTempPassword());
   const [saving, setSaving] = useState(false);
 
@@ -301,14 +301,14 @@ function CreateAccountModal({ student, onClose, onCreated }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const result = await accountService.createUserAccount({
-        email,
+      await accountService.createUserAccount({
+        studentId: student.id,
+        loginName,
         password,
         fullName: student.full_name,
         role: 'STUDENT',
         phone: student.phone,
       });
-      await studentService.update(student.id, { profile_id: result.userId });
       addToast('Đã tạo tài khoản đăng nhập cho học viên');
       onCreated();
     } catch (err) {
@@ -324,10 +324,10 @@ function CreateAccountModal({ student, onClose, onCreated }) {
         <p className="text-sm text-slate-500">
           Tạo tài khoản để <strong>{student.full_name}</strong> hoặc phụ huynh có thể đăng nhập vào ứng dụng.
         </p>
-        <Input label="Email đăng nhập" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input label="Tài khoản đăng nhập" required value={loginName} onChange={(e) => setLoginName(e.target.value)} />
         <div>
-          <Input label="Mật khẩu tạm thời" required value={password} onChange={(e) => setPassword(e.target.value)} />
-          <p className="text-xs text-slate-400 mt-1">Học viên sẽ được yêu cầu đổi mật khẩu ngay lần đăng nhập đầu tiên.</p>
+          <Input label="Mật khẩu" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <p className="text-xs text-slate-400 mt-1">Học viên dùng tài khoản và mật khẩu này để đăng nhập.</p>
         </div>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="btn btn-ghost flex-1">Hủy</button>

@@ -7,13 +7,13 @@ import { supabase } from '@/lib/supabase';
  * Service Role key itself never reaches the frontend.
  */
 export const accountService = {
-  async createUserAccount({ email, password, fullName, role, phone }) {
+  async createUserAccount({ email, loginName, password, fullName, role, phone, studentId }) {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
     if (!token) throw new Error('Phiên đăng nhập đã hết hạn');
 
     const { data, error } = await supabase.functions.invoke('create-user', {
-      body: { email, password, fullName, role, phone },
+      body: { email, loginName, password, fullName, role, phone, studentId },
       headers: { Authorization: `Bearer ${token}` },
     });
 

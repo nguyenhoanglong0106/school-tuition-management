@@ -8,6 +8,20 @@ export const authService = {
     return data;
   },
 
+  // Student login resolves the student code server-side so the internal email stays hidden.
+  async loginStudent(loginName, password) {
+    const { data, error } = await supabase.functions.invoke('student-login', {
+      body: { loginName, password },
+    });
+    if (error) throw new Error(error.message || 'Đăng nhập thất bại');
+    if (data?.error) throw new Error(data.error);
+    if (!data?.session) throw new Error('Đăng nhập thất bại');
+
+    const { error: sessionError } = await supabase.auth.setSession(data.session);
+    if (sessionError) throw sessionError;
+    return data;
+  },
+
   // Logout
   async logout() {
     const { error } = await supabase.auth.signOut();

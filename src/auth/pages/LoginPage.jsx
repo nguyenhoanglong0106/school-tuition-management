@@ -10,7 +10,7 @@ import { getHomePathForRole } from '@/utils/permissions';
 export default function LoginPage() {
   const navigate = useNavigate();
   const { schoolName, logoUrl } = useSettings();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,15 +18,14 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password) return;
-
-    setLoading(true);
+    if (!identifier.trim() || !password) return;
     setError('');
 
     try {
-      const { user } = await authService.login(email.trim(), password);
-
-      if (!user) throw new Error('Đăng nhập thất bại');
+      const isStudentLogin = !identifier.includes('@');
+      const { user } = isStudentLogin
+        ? await authService.loginStudent(identifier.trim(), password)
+        : await authService.login(identifier.trim(), password);
 
       // Get profile to determine redirect
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
@@ -34,10 +33,8 @@ export default function LoginPage() {
       navigate(getHomePathForRole(profile?.role), { replace: true });
     } catch (err) {
       const msg = err?.message ?? '';
-      if (msg.includes('Invalid login credentials') || msg.includes('invalid')) {
-        setError('Email hoặc mật khẩu không chính xác. Vui lòng thử lại.');
-      } else if (msg.includes('Email not confirmed')) {
-        setError('Email chưa được xác nhận. Vui lòng kiểm tra hộp thư.');
+      if (msg.includes('Invalid login credentials') || msg.includes('invalid') || msg.includes('Tài khoản')) {
+        setError('Tài khoản hoặc mật khẩu không chính xác. Vui lòng thử lại.');
       } else {
         setError(msg || 'Đã xảy ra lỗi. Vui lòng thử lại.');
       }
@@ -75,17 +72,17 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="form-label">Email</label>
+              <label className="form-label">Tài khoản học viên</label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className="form-input"
-                placeholder="your@email.com"
+                placeholder="Nhập tài khoản học viên"
                 required
                 autoFocus
-                autoComplete="email"
+                autoComplete="username"
               />
             </div>
 
@@ -137,12 +134,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-4 text-center">
-            <a
-              href="/forgot-password"
-              className="text-sm text-primary-600 hover:text-primary-700 hover:underline"
-            >
-              Quên mật khẩu?
-            </a>
+            <p className="text-sm text-slate-500">
+              Quên mật khẩu? Liên hệ giáo viên
+            </p>
           </div>
         </div>
 
