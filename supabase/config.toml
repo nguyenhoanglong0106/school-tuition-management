@@ -1,0 +1,9 @@
+# Supabase CLI project marker.
+# This file only needs to exist for `supabase link` / `supabase db push` to
+# recognize this folder as a Supabase project — it does NOT require Docker
+# and is unrelated to `supabase start` (local dev stack, not used here since
+# this project only ever targets the hosted Supabase Cloud project).
+project_id = "school-tuition-management"
+
+[db]
+major_version = 15

@@ -1,0 +1,63 @@
+import { useNavigate } from 'react-router-dom';
+import { User, CreditCard, ClipboardCheck, School, KeyRound, LogOut, ChevronRight, Building2 } from 'lucide-react';
+import { authService } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { Avatar } from '@/components/common/UI';
+
+const ITEMS = [
+  { to: '/app/profile', label: 'Hồ sơ cá nhân', icon: User },
+  { to: '/app/classes', label: 'Lớp đang học', icon: School },
+  { to: '/app/payments', label: 'Lịch sử thanh toán', icon: CreditCard },
+  { to: '/app/attendance', label: 'Điểm danh', icon: ClipboardCheck },
+];
+
+export default function StudentMore() {
+  const navigate = useNavigate();
+  const { profile } = useAuth();
+  const { schoolName, settings } = useSettings();
+
+  const handleLogout = async () => {
+    await authService.logout();
+    navigate('/login', { replace: true });
+  };
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div className="card p-5 flex items-center gap-4">
+        <Avatar name={profile?.full_name} src={profile?.avatar_url} size={14} />
+        <div className="min-w-0">
+          <p className="font-bold text-slate-800 truncate">{profile?.full_name}</p>
+          <p className="text-xs text-slate-400 truncate">{profile?.email}</p>
+        </div>
+      </div>
+
+      <div className="card divide-y divide-slate-50">
+        {ITEMS.map(({ to, label, icon: Icon }) => (
+          <button key={to} onClick={() => navigate(to)} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 text-left">
+            <Icon size={18} className="text-slate-400" />
+            <span className="flex-1 text-sm font-medium text-slate-700">{label}</span>
+            <ChevronRight size={16} className="text-slate-300" />
+          </button>
+        ))}
+        <button onClick={() => navigate('/reset-password')} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 text-left">
+          <KeyRound size={18} className="text-slate-400" />
+          <span className="flex-1 text-sm font-medium text-slate-700">Đổi mật khẩu</span>
+          <ChevronRight size={16} className="text-slate-300" />
+        </button>
+      </div>
+
+      <div className="card p-4 flex items-center gap-3">
+        <Building2 size={18} className="text-slate-400" />
+        <div className="text-xs text-slate-500">
+          <p className="font-medium text-slate-700">{schoolName}</p>
+          <p>{settings?.phone} · {settings?.email}</p>
+        </div>
+      </div>
+
+      <button onClick={handleLogout} className="w-full card p-4 flex items-center justify-center gap-2 text-red-500 font-medium">
+        <LogOut size={18} /> Đăng xuất
+      </button>
+    </div>
+  );
+}
