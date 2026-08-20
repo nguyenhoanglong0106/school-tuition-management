@@ -27,6 +27,8 @@ const Fees = lazy(() => import('@/admin/pages/Fees'));
 const Payments = lazy(() => import('@/admin/pages/Payments'));
 const Finance = lazy(() => import('@/admin/pages/Finance'));
 const AdminDocuments = lazy(() => import('@/admin/pages/Documents'));
+const Exercises = lazy(() => import('@/admin/pages/Exercises'));
+const ExerciseDetail = lazy(() => import('@/admin/pages/ExerciseDetail'));
 const AdminNotifications = lazy(() => import('@/admin/pages/Notifications'));
 const BankAccounts = lazy(() => import('@/admin/pages/BankAccounts'));
 const SystemSettings = lazy(() => import('@/admin/pages/Settings'));
@@ -104,6 +106,8 @@ export default function AppRoutes() {
           <Route path="payments" element={<AdminOnly><Payments /></AdminOnly>} />
           <Route path="finance" element={<AdminOnly><Finance /></AdminOnly>} />
           <Route path="documents" element={<AdminDocuments />} />
+          <Route path="exercises" element={<Exercises />} />
+          <Route path="exercises/:id" element={<ExerciseDetail />} />
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="bank-accounts" element={<AdminOnly><BankAccounts /></AdminOnly>} />
           <Route path="settings" element={<AdminOnly><SystemSettings /></AdminOnly>} />

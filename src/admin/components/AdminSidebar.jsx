@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, School, CalendarDays,
-  ClipboardCheck, CreditCard, Receipt, TrendingUp, FileText,
+  ClipboardCheck, CreditCard, Receipt, TrendingUp, FileText, NotebookPen,
   Bell, Landmark, Settings, LogOut, Menu, X, GraduationCap,
   ChevronRight, LifeBuoy
 } from 'lucide-react';
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { to: '/admin/payments', label: 'Thanh toán', icon: Receipt },
   { to: '/admin/finance', label: 'Thu chi', icon: TrendingUp },
   { to: '/admin/documents', label: 'Tài liệu', icon: FileText },
+  { to: '/admin/exercises', label: 'Bài tập', icon: NotebookPen },
   { to: '/admin/notifications', label: 'Thông báo', icon: Bell },
   { to: '/admin/bank-accounts', label: 'Tài khoản NH', icon: Landmark },
   { to: '/admin/settings', label: 'Cấu hình', icon: Settings },
@@ -32,6 +33,7 @@ const TEACHER_NAV_ITEMS = [
   { to: '/admin/schedules', label: 'Lịch học', icon: CalendarDays },
   { to: '/admin/attendance', label: 'Điểm danh', icon: ClipboardCheck },
   { to: '/admin/documents', label: 'Tài liệu', icon: FileText },
+  { to: '/admin/exercises', label: 'Bài tập', icon: NotebookPen },
   { to: '/admin/notifications', label: 'Thông báo', icon: Bell },
 ];
 
