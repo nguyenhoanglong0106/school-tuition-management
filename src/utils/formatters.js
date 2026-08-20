@@ -99,6 +99,25 @@ export const getCurrentMonthYear = () => {
   return { month: now.getMonth() + 1, year: now.getFullYear() };
 };
 
+// Strip diacritics/unsafe characters for use as a Supabase Storage object key
+// — it 400s with "Invalid key" on non-ASCII bytes (e.g. "QUY CHẾ.docx").
+// original_name/title columns keep the real Vietnamese filename for display.
+export const sanitizeFileName = (name) => {
+  const dotIdx = name.lastIndexOf('.');
+  const base = dotIdx > 0 ? name.slice(0, dotIdx) : name;
+  const ext = dotIdx > 0 ? name.slice(dotIdx) : '';
+  const safeBase = base
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // combining diacritics (á, ế, ệ, ...)
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D') // NFD doesn't decompose đ/Đ, handle separately
+    .replace(/[^a-zA-Z0-9._-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const safeExt = ext.replace(/[^a-zA-Z0-9.]+/g, '');
+  return (safeBase || 'file') + safeExt;
+};
+
 // Pluralize with Vietnamese
 export const truncateText = (text, maxLen = 50) => {
   if (!text) return '';

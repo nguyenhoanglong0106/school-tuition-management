@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sanitizeFileName } from '@/utils/formatters';
 
 export const documentService = {
   async getAll({ search = '', subjectId = null, page = 1, pageSize = 20 } = {}) {
@@ -35,7 +36,7 @@ export const documentService = {
       throw new Error(`Loại file ${ext} không được phép tải lên`);
     }
 
-    const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    const fileName = `${Date.now()}_${sanitizeFileName(file.name)}`;
     const filePath = `docs/${fileName}`;
 
     const { error: uploadErr } = await supabase.storage

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sanitizeFileName } from '@/utils/formatters';
 
 export const exerciseService = {
   // ==========================================
@@ -157,7 +158,7 @@ export const exerciseService = {
     if (file.size > maxMB * 1024 * 1024) {
       throw new Error(`File quá lớn. Tối đa ${maxMB}MB`);
     }
-    const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    const fileName = `${Date.now()}_${sanitizeFileName(file.name)}`;
     const path = `audio/${fileName}`;
 
     const { error } = await supabase.storage.from('exercise-media').upload(path, file);
