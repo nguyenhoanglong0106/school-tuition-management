@@ -1,0 +1,9 @@
+--- para 58 align=CENTER (1) style=Normal text='' ---
+  run text='' italic=None bold=None size=None color=None name=None
+    IMAGE cx,cy(EMU)= ('5120640', '3200400') -> inches approx 5.6 x 3.5
+--- para 59 align=CENTER (1) style=Normal text='Dashboard tổng quan' ---
+  run text='Dashboard tổng quan' italic=True bold=None size=114300 color=808080 name=None
+--- para 143 align=None style=Normal text='[Chua co anh minh hoa: Trang chủ học viê' ---
+  run text='[Chua co anh minh hoa: Trang c' italic=True bold=None size=None color=C0C0C0 name=None
+--- para 144 align=None style=Heading 2 text='3.2. Lớp đang học' ---
+  run text='3.2. Lớp đang học' italic=None bold=None size=None color=None name=None

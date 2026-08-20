@@ -1,0 +1,26 @@
+143	Normal	'[Chua co anh minh hoa: Trang chủ học viên]'
+146	Normal	'[Chua co anh minh hoa: Lớp đang học]'
+149	Normal	'[Chua co anh minh hoa: Lịch học]'
+152	Normal	'[Chua co anh minh hoa: Điểm danh cá nhân]'
+158	Normal	'[Chua co anh minh hoa: Học phí học viên]'
+159	Normal	'[Chua co anh minh hoa: Lịch sử thanh toán]'
+162	Normal	'[Chua co anh minh hoa: Tài liệu]'
+165	Normal	'[Chua co anh minh hoa: Thông báo]'
+168	Normal	'[Chua co anh minh hoa: Hồ sơ cá nhân]'
+169	Normal	'[Chua co anh minh hoa: Mục Thêm]'
+IMGPARA 51	Normal	caption_next='Màn hình đăng nhập'	caption_style=Normal
+IMGPARA 58	Normal	caption_next='Dashboard tổng quan'	caption_style=Normal
+IMGPARA 67	Normal	caption_next='Danh sách học viên'	caption_style=Normal
+IMGPARA 69	Normal	caption_next='Form thêm học viên mới'	caption_style=Normal
+IMGPARA 76	Normal	caption_next='Danh sách giáo viên'	caption_style=Normal
+IMGPARA 80	Normal	caption_next='Danh sách môn học'	caption_style=Normal
+IMGPARA 90	Normal	caption_next='Danh sách lớp học'	caption_style=Normal
+IMGPARA 94	Normal	caption_next='Lịch học dạng tuần'	caption_style=Normal
+IMGPARA 99	Normal	caption_next='Màn hình điểm danh'	caption_style=Normal
+IMGPARA 105	Normal	caption_next='Quản lý học phí'	caption_style=Normal
+IMGPARA 112	Normal	caption_next='Danh sách thanh toán'	caption_style=Normal
+IMGPARA 120	Normal	caption_next='Sổ thu chi'	caption_style=Normal
+IMGPARA 124	Normal	caption_next='Kho tài liệu'	caption_style=Normal
+IMGPARA 128	Normal	caption_next='Lịch sử thông báo'	caption_style=Normal
+IMGPARA 132	Normal	caption_next='Tài khoản ngân hàng'	caption_style=Normal
+IMGPARA 136	Normal	caption_next='Cấu hình hệ thống'	caption_style=Normal
