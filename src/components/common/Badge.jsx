@@ -19,7 +19,7 @@ export function Badge({ label, color = 'neutral', className = '' }) {
 }
 
 // Status badge auto-mapped from constants
-import { FEE_STATUS, PAYMENT_STATUS, STUDENT_STATUS, CLASS_STATUS, SESSION_STATUS, ATTENDANCE_STATUS } from '@/constants';
+import { FEE_STATUS, PAYMENT_STATUS, STUDENT_STATUS, CLASS_STATUS, SESSION_STATUS, ATTENDANCE_STATUS, EXERCISE_ASSIGNMENT_STATUS, EXERCISE_SUBMISSION_STATUS } from '@/constants';
 
 export function FeeStatusBadge({ status }) {
   const s = FEE_STATUS[status] ?? { label: status, color: 'neutral' };
@@ -48,5 +48,15 @@ export function SessionStatusBadge({ status }) {
 
 export function AttendanceStatusBadge({ status }) {
   const s = ATTENDANCE_STATUS[status] ?? { label: status, color: 'neutral' };
+  return <Badge label={s.label} color={s.color} />;
+}
+
+export function AssignmentStatusBadge({ status }) {
+  const s = EXERCISE_ASSIGNMENT_STATUS[status] ?? { label: status, color: 'neutral' };
+  return <Badge label={s.label} color={s.color} />;
+}
+
+export function SubmissionStatusBadge({ status }) {
+  const s = EXERCISE_SUBMISSION_STATUS[status] ?? { label: status, color: 'neutral' };
   return <Badge label={s.label} color={s.color} />;
 }

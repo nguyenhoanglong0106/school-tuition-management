@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, CreditCard, ClipboardCheck, School, KeyRound, LogOut, ChevronRight, Building2, Bell } from 'lucide-react';
+import { User, CreditCard, ClipboardCheck, School, KeyRound, LogOut, ChevronRight, Building2, Bell, NotebookPen } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -11,6 +11,7 @@ import { isPushSupported, getCurrentSubscription, enablePush, disablePush } from
 const ITEMS = [
   { to: '/app/profile', label: 'Hồ sơ cá nhân', icon: User },
   { to: '/app/classes', label: 'Lớp đang học', icon: School },
+  { to: '/app/exercises', label: 'Bài tập', icon: NotebookPen },
   { to: '/app/payments', label: 'Lịch sử thanh toán', icon: CreditCard },
   { to: '/app/attendance', label: 'Điểm danh', icon: ClipboardCheck },
 ];

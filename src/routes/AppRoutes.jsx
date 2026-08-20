@@ -29,6 +29,7 @@ const Finance = lazy(() => import('@/admin/pages/Finance'));
 const AdminDocuments = lazy(() => import('@/admin/pages/Documents'));
 const Exercises = lazy(() => import('@/admin/pages/Exercises'));
 const ExerciseDetail = lazy(() => import('@/admin/pages/ExerciseDetail'));
+const AssignmentDetail = lazy(() => import('@/admin/pages/AssignmentDetail'));
 const AdminNotifications = lazy(() => import('@/admin/pages/Notifications'));
 const BankAccounts = lazy(() => import('@/admin/pages/BankAccounts'));
 const SystemSettings = lazy(() => import('@/admin/pages/Settings'));
@@ -43,6 +44,8 @@ const StudentPayments = lazy(() => import('@/student/pages/Payments'));
 const StudentSchedule = lazy(() => import('@/student/pages/Schedule'));
 const StudentAttendance = lazy(() => import('@/student/pages/Attendance'));
 const StudentDocuments = lazy(() => import('@/student/pages/Documents'));
+const StudentExercises = lazy(() => import('@/student/pages/Exercises'));
+const StudentExerciseTake = lazy(() => import('@/student/pages/ExerciseTake'));
 const StudentNotifications = lazy(() => import('@/student/pages/Notifications'));
 const StudentMore = lazy(() => import('@/student/pages/More'));
 
@@ -108,6 +111,7 @@ export default function AppRoutes() {
           <Route path="documents" element={<AdminDocuments />} />
           <Route path="exercises" element={<Exercises />} />
           <Route path="exercises/:id" element={<ExerciseDetail />} />
+          <Route path="assignments/:id" element={<AssignmentDetail />} />
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="bank-accounts" element={<AdminOnly><BankAccounts /></AdminOnly>} />
           <Route path="settings" element={<AdminOnly><SystemSettings /></AdminOnly>} />
@@ -135,6 +139,8 @@ export default function AppRoutes() {
           <Route path="schedule" element={<StudentSchedule />} />
           <Route path="attendance" element={<StudentAttendance />} />
           <Route path="documents" element={<StudentDocuments />} />
+          <Route path="exercises" element={<StudentExercises />} />
+          <Route path="exercises/:submissionId" element={<StudentExerciseTake />} />
           <Route path="notifications" element={<StudentNotifications />} />
           <Route path="more" element={<StudentMore />} />
         </Route>

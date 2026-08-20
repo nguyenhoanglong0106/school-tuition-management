@@ -54,6 +54,22 @@ export const ATTENDANCE_STATUS = {
   LATE: { label: 'Đi trễ', color: 'info', icon: '⏰' },
 };
 
+// Exercise assignment status
+export const EXERCISE_ASSIGNMENT_STATUS = {
+  ACTIVE: { label: 'Đang mở', color: 'success' },
+  CLOSED: { label: 'Đã đóng', color: 'neutral' },
+  ARCHIVED: { label: 'Lưu trữ', color: 'neutral' },
+};
+
+// Exercise submission status
+export const EXERCISE_SUBMISSION_STATUS = {
+  NOT_STARTED: { label: 'Chưa làm', color: 'neutral' },
+  IN_PROGRESS: { label: 'Đang làm', color: 'info' },
+  SUBMITTED: { label: 'Đã nộp, chờ chấm', color: 'warning' },
+  LATE: { label: 'Nộp trễ', color: 'warning' },
+  GRADED: { label: 'Đã chấm', color: 'success' },
+};
+
 // Fee cycle
 export const FEE_CYCLE = {
   MONTHLY: 'Hàng tháng',

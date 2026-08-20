@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, UserPlus, CalendarPlus, Printer, Users as UsersIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, UserPlus, CalendarPlus, Printer, Users as UsersIcon, Send, NotebookPen } from 'lucide-react';
 import { classService } from '@/services/classService';
 import { scheduleService } from '@/services/scheduleService';
 import { studentService } from '@/services/studentService';
+import { exerciseService } from '@/services/exerciseService';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs } from '@/components/common/Tabs';
 import { Skeleton, EmptyState } from '@/components/common/UI';
 import { Input, MoneyInput, Select, SearchInput as Search2 } from '@/components/common/Form';
 import { Modal, ConfirmDialog } from '@/components/common/Modal';
-import { ClassStatusBadge } from '@/components/common/Badge';
-import { formatCurrency, formatDate, formatTime, getDayOfWeekLabel } from '@/utils/formatters';
+import { ClassStatusBadge, AssignmentStatusBadge } from '@/components/common/Badge';
+import { AssignExerciseModal } from '@/admin/components/AssignExerciseModal';
+import { formatCurrency, formatDate, formatTime, formatDateTime, getDayOfWeekLabel } from '@/utils/formatters';
 import { DAYS_OF_WEEK } from '@/constants';
 import { printClassRoster } from '@/utils/printService';
 
@@ -19,6 +21,7 @@ const TABS = [
   { key: 'info', label: 'Thông tin' },
   { key: 'students', label: 'Học viên' },
   { key: 'schedules', label: 'Lịch học' },
+  { key: 'exercises', label: 'Bài tập' },
 ];
 
 export default function ClassDetail() {
@@ -29,11 +32,13 @@ export default function ClassDetail() {
   const [cls, setCls] = useState(null);
   const [students, setStudents] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('info');
   const [addStudentModal, setAddStudentModal] = useState(false);
   const [addScheduleModal, setAddScheduleModal] = useState(false);
   const [genSessionsModal, setGenSessionsModal] = useState(false);
+  const [assignModal, setAssignModal] = useState(false);
   const [removeTarget, setRemoveTarget] = useState(null);
 
   useEffect(() => {
@@ -43,14 +48,16 @@ export default function ClassDetail() {
   const load = async () => {
     setLoading(true);
     try {
-      const [c, s, sch] = await Promise.all([
+      const [c, s, sch, assign] = await Promise.all([
         classService.getById(id),
         classService.getClassStudents(id),
         classService.getSchedules(id),
+        exerciseService.getAssignments({ classId: id, pageSize: 100 }),
       ]);
       setCls(c);
       setStudents(s);
       setSchedules(sch);
+      setAssignments(assign.data);
     } catch {
       addToast('Không tìm thấy lớp học', 'error');
       navigate('/admin/classes');
@@ -184,8 +191,39 @@ export default function ClassDetail() {
               )}
             </div>
           )}
+          {tab === 'exercises' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h3 className="font-semibold text-slate-800">Bài tập đã giao ({assignments.length})</h3>
+                <button onClick={() => setAssignModal(true)} className="btn-primary btn-sm"><Send size={14} /> Giao bài mới</button>
+              </div>
+              {assignments.length === 0 ? (
+                <EmptyState icon={<NotebookPen size={28} />} title="Chưa giao bài tập nào cho lớp này" description='Chọn bài có sẵn trong ngân hàng bài tập và đặt hạn nộp.' />
+              ) : (
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead><tr><th>Bài tập</th><th>Hạn nộp</th><th>Trạng thái</th><th></th></tr></thead>
+                    <tbody>
+                      {assignments.map((a) => (
+                        <tr key={a.id} onClick={() => navigate(`/admin/assignments/${a.id}`)} className="cursor-pointer hover:bg-slate-50">
+                          <td className="font-medium">{a.title_override ?? a.exercises?.title}</td>
+                          <td>{formatDateTime(a.due_at)}</td>
+                          <td><AssignmentStatusBadge status={a.status} /></td>
+                          <td className="text-primary-600 text-sm">Xem tiến độ →</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {assignModal && (
+        <AssignExerciseModal fixedClassId={id} onClose={() => setAssignModal(false)} onAssigned={() => { setAssignModal(false); load(); }} />
+      )}
 
       {addStudentModal && (
         <AddStudentModal classId={id} existingIds={students.map((s) => s.student_id)} onClose={() => setAddStudentModal(false)} onAdded={() => { setAddStudentModal(false); load(); }} />

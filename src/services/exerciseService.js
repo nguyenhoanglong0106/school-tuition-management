@@ -224,10 +224,28 @@ export const exerciseService = {
     return data;
   },
 
+  async getAssignmentById(id) {
+    const { data, error } = await supabase
+      .from('exercise_assignments')
+      .select(`*, exercises(id, title, description), classes(id, class_name)`)
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   async closeAssignment(id) {
     const { error } = await supabase
       .from('exercise_assignments')
       .update({ status: 'CLOSED' })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async reopenAssignment(id) {
+    const { error } = await supabase
+      .from('exercise_assignments')
+      .update({ status: 'ACTIVE' })
       .eq('id', id);
     if (error) throw error;
   },

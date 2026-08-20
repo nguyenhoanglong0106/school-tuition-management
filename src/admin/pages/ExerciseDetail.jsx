@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Lock, Headphones, X } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Lock, Headphones, X, Send } from 'lucide-react';
 import { exerciseService } from '@/services/exerciseService';
 import { useToast } from '@/contexts/ToastContext';
 import { EmptyState, Skeleton, Spinner } from '@/components/common/UI';
 import { Input, Textarea, Select, Checkbox } from '@/components/common/Form';
 import { Modal, ConfirmDialog } from '@/components/common/Modal';
 import { FileUpload } from '@/components/common/FileUpload';
+import { AssignExerciseModal } from '@/admin/components/AssignExerciseModal';
+import { AssignmentStatusBadge } from '@/components/common/Badge';
+import { formatDateTime } from '@/utils/formatters';
 
 const TYPE_LABELS = {
   MULTIPLE_CHOICE: 'Trắc nghiệm',
@@ -25,6 +28,7 @@ export default function ExerciseDetail() {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [exercise, setExercise] = useState(null);
+  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
   const [questionModal, setQuestionModal] = useState(false);
@@ -32,16 +36,18 @@ export default function ExerciseDetail() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [reordering, setReordering] = useState(false);
+  const [assignModal, setAssignModal] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [ex, assignedCount] = await Promise.all([
+      const [ex, assignmentList] = await Promise.all([
         exerciseService.getExerciseById(id),
-        exerciseService.countAssignments(id),
+        exerciseService.getAssignments({ exerciseId: id, pageSize: 100 }),
       ]);
       setExercise(ex);
-      setLocked(assignedCount > 0);
+      setAssignments(assignmentList.data);
+      setLocked(assignmentList.count > 0);
     } catch (err) {
       addToast(err.message ?? 'Không thể tải bài tập', 'error');
     } finally {
@@ -120,9 +126,12 @@ export default function ExerciseDetail() {
           </p>
           {exercise.description && <p className="text-slate-500 text-sm mt-1">{exercise.description}</p>}
         </div>
-        <button onClick={openCreate} disabled={locked} className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed">
-          <Plus size={16} /> Thêm câu hỏi
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setAssignModal(true)} className="btn btn-outline"><Send size={16} /> Giao bài</button>
+          <button onClick={openCreate} disabled={locked} className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed">
+            <Plus size={16} /> Thêm câu hỏi
+          </button>
+        </div>
       </div>
 
       {locked && (
@@ -162,6 +171,29 @@ export default function ExerciseDetail() {
         </div>
       )}
 
+      <div className="pt-2">
+        <h3 className="font-semibold text-slate-800 mb-3">Đã giao ({assignments.length})</h3>
+        {assignments.length === 0 ? (
+          <div className="card"><EmptyState title="Chưa giao bài tập này cho ai" description='Nhấn "Giao bài" ở trên để chọn lớp hoặc giao toàn hệ thống.' /></div>
+        ) : (
+          <div className="table-wrapper">
+            <table className="data-table">
+              <thead><tr><th>Lớp / Phạm vi</th><th>Hạn nộp</th><th>Trạng thái</th><th></th></tr></thead>
+              <tbody>
+                {assignments.map((a) => (
+                  <tr key={a.id} onClick={() => navigate(`/admin/assignments/${a.id}`)} className="cursor-pointer hover:bg-slate-50">
+                    <td className="font-medium">{a.scope === 'SYSTEM' ? 'Toàn hệ thống' : (a.classes?.class_name ?? '—')}</td>
+                    <td>{formatDateTime(a.due_at)}</td>
+                    <td><AssignmentStatusBadge status={a.status} /></td>
+                    <td className="text-primary-600 text-sm">Xem tiến độ →</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {questionModal && (
         <QuestionModal
           exerciseId={id}
@@ -169,6 +201,14 @@ export default function ExerciseDetail() {
           nextOrderIndex={questions.length}
           onClose={() => setQuestionModal(false)}
           onSaved={() => { setQuestionModal(false); load(); }}
+        />
+      )}
+
+      {assignModal && (
+        <AssignExerciseModal
+          fixedExerciseId={id}
+          onClose={() => setAssignModal(false)}
+          onAssigned={() => { setAssignModal(false); load(); }}
         />
       )}
 
@@ -254,7 +294,12 @@ function QuestionModal({ exerciseId, question, nextOrderIndex, onClose, onSaved 
         question_text: questionText,
         media_url: mediaUrl,
         media_type: mediaType,
-        options: questionType === 'MULTIPLE_CHOICE' ? options : null,
+        // FILL_BLANK: options carries only { blank_count } — the accepted
+        // answers stay in the answer-key table, students only need to know
+        // how many blanks to render.
+        options: questionType === 'MULTIPLE_CHOICE' ? options
+          : questionType === 'FILL_BLANK' ? { blank_count: blanks.length }
+          : null,
         points: Number(points),
       };
 
