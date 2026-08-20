@@ -84,7 +84,7 @@ export default function Classes() {
   const onSubmit = async (values) => {
     setSaving(true);
     try {
-      const payload = { ...values, teacher_id: values.teacher_id || null };
+      const payload = { ...values, teacher_id: values.teacher_id || null, start_date: values.start_date || null, end_date: values.end_date || null };
       if (editing) {
         await classService.update(editing.id, payload);
         addToast('Đã cập nhật lớp học');

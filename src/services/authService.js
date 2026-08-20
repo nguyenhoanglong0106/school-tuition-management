@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, getFunctionErrorMessage } from '@/lib/supabase';
 
 export const authService = {
   // Login with email and password
@@ -13,7 +13,7 @@ export const authService = {
     const { data, error } = await supabase.functions.invoke('student-login', {
       body: { loginName, password },
     });
-    if (error) throw new Error(error.message || 'Đăng nhập thất bại');
+    if (error) throw new Error(await getFunctionErrorMessage(error, 'Đăng nhập thất bại'));
     if (data?.error) throw new Error(data.error);
     if (!data?.session) throw new Error('Đăng nhập thất bại');
 

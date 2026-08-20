@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Download, Trash2, Pencil, Users } from 'lucide-react';
+import { Plus, Download, Trash2, Pencil, Users, Camera } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { studentService } from '@/services/studentService';
 import { useDataList } from '@/hooks/useDataList';
 import { useToast } from '@/contexts/ToastContext';
@@ -14,6 +15,7 @@ import { SearchInput, Select, Input } from '@/components/common/Form';
 import { Modal, ConfirmDialog } from '@/components/common/Modal';
 import { StudentStatusBadge } from '@/components/common/Badge';
 import { formatDate } from '@/utils/formatters';
+import { compressImage } from '@/utils/imageCompression';
 import { STUDENT_STATUS } from '@/constants';
 import { exportToExcel } from '@/utils/exportExcel';
 
@@ -45,6 +47,8 @@ export default function Students() {
   const [deleteClasses, setDeleteClasses] = useState([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const fetchFn = useCallback(
     ({ page, pageSize }) => studentService.getAll({ search, status, page, pageSize }),
@@ -59,12 +63,14 @@ export default function Students() {
 
   const openCreate = async () => {
     setEditing(null);
+    setAvatarUrl(null);
     reset({ status: 'ACTIVE' });
     setModalOpen(true);
   };
 
   const openEdit = (student) => {
     setEditing(student);
+    setAvatarUrl(student.avatar_url ?? null);
     reset({
       full_name: student.full_name ?? '',
       date_of_birth: student.date_of_birth ?? '',
@@ -83,15 +89,41 @@ export default function Students() {
     setModalOpen(true);
   };
 
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    // Instant local preview while the real upload is still in flight —
+    // a fresh Supabase Storage object can take a couple of seconds to
+    // start serving through the CDN, which otherwise looks broken.
+    const localPreview = URL.createObjectURL(file);
+    setAvatarUrl(localPreview);
+    setUploadingAvatar(true);
+    try {
+      const blob = await compressImage(file);
+      const path = `student-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+      const { error } = await supabase.storage.from('avatars').upload(path, blob, { contentType: 'image/webp', upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
+      URL.revokeObjectURL(localPreview);
+    } catch (err) {
+      addToast(err.message ?? 'Không thể tải ảnh lên', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const onSubmit = async (values) => {
     setSaving(true);
     try {
+      const payload = { ...values, date_of_birth: values.date_of_birth || null, avatar_url: avatarUrl };
       if (editing) {
-        await studentService.update(editing.id, values);
+        await studentService.update(editing.id, payload);
         addToast('Đã cập nhật học viên');
       } else {
         const code = await studentService.generateStudentCode();
-        await studentService.create({ ...values, student_code: code, join_date: new Date().toISOString().split('T')[0] });
+        await studentService.create({ ...payload, student_code: code, join_date: new Date().toISOString().split('T')[0] });
         addToast('Đã thêm học viên mới');
       }
       setModalOpen(false);
@@ -237,6 +269,13 @@ export default function Students() {
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Cập nhật học viên' : 'Thêm học viên mới'} size="lg">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar name={editing?.full_name} src={avatarUrl} size={16} />
+            <label className="btn btn-outline btn-sm cursor-pointer">
+              <Camera size={14} /> {uploadingAvatar ? 'Đang tải lên...' : 'Chọn ảnh đại diện'}
+              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={uploadingAvatar} />
+            </label>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Họ và tên" required {...register('full_name')} error={errors.full_name?.message} />
             <Input label="Ngày sinh" type="date" {...register('date_of_birth')} />

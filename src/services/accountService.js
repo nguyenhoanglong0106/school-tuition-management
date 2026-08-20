@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, getFunctionErrorMessage } from '@/lib/supabase';
 
 /**
  * Privileged account operations. These call secure Supabase Edge Functions
@@ -17,7 +17,7 @@ export const accountService = {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (error) throw new Error(error.message || 'Không thể tạo tài khoản đăng nhập');
+    if (error) throw new Error(await getFunctionErrorMessage(error, 'Không thể tạo tài khoản đăng nhập'));
     if (data?.error) throw new Error(data.error);
     return data;
   },
@@ -32,7 +32,7 @@ export const accountService = {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (error) throw new Error(error.message || 'Không thể đặt lại mật khẩu');
+    if (error) throw new Error(await getFunctionErrorMessage(error, 'Không thể đặt lại mật khẩu'));
     if (data?.error) throw new Error(data.error);
     return data; // { tempPassword }
   },
