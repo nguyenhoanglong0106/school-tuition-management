@@ -10,6 +10,7 @@ import { Select, Input, Textarea, SearchInput } from '@/components/common/Form';
 import { Modal, ConfirmDialog } from '@/components/common/Modal';
 import { FileUpload } from '@/components/common/FileUpload';
 import { formatDate, formatFileSize } from '@/utils/formatters';
+import { openInNewTab } from '@/utils/openInNewTab';
 
 export default function AdminDocuments() {
   const { addToast } = useToast();
@@ -45,9 +46,11 @@ export default function AdminDocuments() {
     }
   };
 
-  const handleDownload = async (doc) => {
-    const url = await documentService.getSignedUrl(doc.file_path);
-    window.open(url, '_blank');
+  const handleDownload = (doc) => {
+    openInNewTab(
+      documentService.getSignedUrl(doc.file_path),
+      (err) => addToast(err.message ?? 'Không thể tải tài liệu, vui lòng thử lại', 'error')
+    );
   };
 
   return (

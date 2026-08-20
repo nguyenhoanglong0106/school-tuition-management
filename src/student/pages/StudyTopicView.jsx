@@ -22,9 +22,25 @@ export default function StudyTopicView() {
   }, [id]);
 
   const speak = (text) => {
-    if (!('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) {
+      addToast('Trình duyệt này không hỗ trợ đọc phát âm', 'error');
+      return;
+    }
+    // Cancel first: on several mobile browsers, calling speak() again while a
+    // previous utterance is still queued/finishing silently no-ops instead of
+    // interrupting it, making repeated taps look "stuck" or unresponsive.
+    window.speechSynthesis.cancel();
+
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'en-US';
+    // Explicitly pick an English voice when one exists -- without this, a
+    // device whose only installed voice is Vietnamese will read the English
+    // text with Vietnamese phonetics (sounds flatly wrong, not just accented).
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find((v) => v.lang === 'en-US') ?? voices.find((v) => v.lang?.startsWith('en'));
+    if (enVoice) utter.voice = enVoice;
+    utter.onerror = () => addToast('Không phát âm được câu này trên thiết bị này', 'error');
+
     window.speechSynthesis.speak(utter);
   };
 

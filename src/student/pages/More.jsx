@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, CreditCard, ClipboardCheck, School, KeyRound, LogOut, ChevronRight, Building2, Bell, NotebookPen, Layers } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentStudent } from '@/hooks/useCurrentStudent';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { Avatar } from '@/components/common/UI';
@@ -20,6 +21,7 @@ const ITEMS = [
 export default function StudentMore() {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { student } = useCurrentStudent();
   const { schoolName, settings } = useSettings();
   const { addToast } = useToast();
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -61,10 +63,14 @@ export default function StudentMore() {
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="card p-5 flex items-center gap-4">
-        <Avatar name={profile?.full_name} src={profile?.avatar_url} size={14} />
-        <div className="min-w-0">
-          <p className="font-bold text-slate-800 truncate">{profile?.full_name}</p>
-          <p className="text-xs text-slate-400 truncate">{profile?.email}</p>
+        <Avatar name={profile?.full_name} src={profile?.avatar_url} size={16} />
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-slate-800 truncate text-lg">{profile?.full_name}</p>
+          {student?.student_code && (
+            <span className="inline-block mt-1 text-xs font-medium text-primary-600 bg-primary-50 px-2.5 py-1 rounded-full">
+              Mã học viên: {student.student_code}
+            </span>
+          )}
         </div>
       </div>
 

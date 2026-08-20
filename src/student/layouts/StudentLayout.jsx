@@ -4,7 +4,7 @@ import { Home, CalendarDays, CreditCard, FileText, User, Bell } from 'lucide-rea
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { notificationService } from '@/services/notificationService';
-import { Avatar, Spinner } from '@/components/common/UI';
+import { Spinner } from '@/components/common/UI';
 
 const BOTTOM_NAV = [
   { to: '/app', label: 'Trang chủ', icon: Home, exact: true },
@@ -32,9 +32,17 @@ export default function StudentLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    // Scrolling is contained to <main> only (h-screen + overflow-hidden on the
+    // shell) instead of letting the whole document scroll. A document-level
+    // scroll makes iOS Safari's address bar collapse/expand as you scroll,
+    // which visibly jumps/flickers any `position: fixed` element (the bottom
+    // nav) as the visual viewport height changes underneath it. Keeping header
+    // and nav as plain flex children of a viewport-locked shell (same pattern
+    // AdminLayout already uses) sidesteps that entirely — they never need
+    // `sticky`/`fixed` because they're simply never part of the scrolling area.
+    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
       {/* Top header */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-100 safe-top">
+      <header className="flex-shrink-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-100 safe-top">
         <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
             {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-contain" /> : <span className="text-white text-xs font-bold">{schoolName?.charAt(0)}</span>}
@@ -44,21 +52,20 @@ export default function StudentLayout() {
             <Bell size={19} className="text-slate-500" />
             {unread > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />}
           </button>
-          <button onClick={() => navigate('/app/profile')}>
-            <Avatar name={profile?.full_name} src={profile?.avatar_url} size={8} />
-          </button>
         </div>
       </header>
 
       {/* Page content */}
-      <main className="flex-1 max-w-lg w-full mx-auto px-4 py-4 pb-24">
-        <Suspense fallback={<div className="flex justify-center py-24"><Spinner size="lg" /></div>}>
-          <Outlet />
-        </Suspense>
+      <main className="flex-1 overflow-y-auto scrollbar-thin">
+        <div className="max-w-lg w-full mx-auto px-4 py-4">
+          <Suspense fallback={<div className="flex justify-center py-24"><Spinner size="lg" /></div>}>
+            <Outlet />
+          </Suspense>
+        </div>
       </main>
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-100 safe-bottom">
+      <nav className="flex-shrink-0 z-30 bg-white border-t border-slate-100 safe-bottom">
         <div className="max-w-lg mx-auto grid grid-cols-5">
           {BOTTOM_NAV.map(({ to, label, icon: Icon, exact }) => (
             <NavLink

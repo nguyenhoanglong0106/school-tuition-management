@@ -3,12 +3,15 @@ import { FileText, Download } from 'lucide-react';
 import { useCurrentStudent } from '@/hooks/useCurrentStudent';
 import { studentService } from '@/services/studentService';
 import { documentService } from '@/services/documentService';
+import { useToast } from '@/contexts/ToastContext';
 import { Select, SearchInput } from '@/components/common/Form';
 import { Skeleton, EmptyState } from '@/components/common/UI';
 import { formatDate, formatFileSize } from '@/utils/formatters';
+import { openInNewTab } from '@/utils/openInNewTab';
 
 export default function StudentDocuments() {
   const { student, loading: studentLoading } = useCurrentStudent();
+  const { addToast } = useToast();
   const [classIds, setClassIds] = useState([]);
   const [classes, setClasses] = useState([]);
   const [filterClass, setFilterClass] = useState('');
@@ -39,9 +42,11 @@ export default function StudentDocuments() {
     }
   };
 
-  const handleView = async (doc) => {
-    const url = await documentService.getSignedUrl(doc.file_path);
-    window.open(url, '_blank');
+  const handleView = (doc) => {
+    openInNewTab(
+      documentService.getSignedUrl(doc.file_path),
+      (err) => addToast(err.message ?? 'Không thể tải tài liệu, vui lòng thử lại', 'error')
+    );
   };
 
   const filtered = filterClass ? docs.filter((d) => (d.document_classes ?? []).some((dc) => dc.class_id === filterClass)) : docs;

@@ -157,14 +157,21 @@ export function Avatar({ src, name, size = 10, className = '' }) {
     return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
   };
 
-  const sizeClass = `w-${size} h-${size}`;
+  // Tailwind's JIT scanner only picks up class names it can see literally in
+  // source text -- a template-built `w-${size}` is invisible to it, so any
+  // size without that exact literal string used elsewhere in the codebase
+  // silently gets no width/height at all (this is what made the size=14
+  // avatar balloon to fill its card). Inline px sizing sidesteps that
+  // entirely, matching Tailwind's own 1 unit = 4px spacing scale.
+  const px = size * 4;
 
   if (src) {
     return (
       <img
         src={src}
         alt={name}
-        className={`${sizeClass} rounded-full object-cover flex-shrink-0 ${className}`}
+        className={`rounded-full object-cover flex-shrink-0 ${className}`}
+        style={{ width: px, height: px }}
       />
     );
   }
@@ -181,10 +188,10 @@ export function Avatar({ src, name, size = 10, className = '' }) {
 
   return (
     <div
-      className={`${sizeClass} rounded-full bg-gradient-to-br ${colors[colorIdx]} flex items-center justify-center text-white font-semibold flex-shrink-0 ${className}`}
-      style={{ fontSize: `${size * 3}px` }}
+      className={`rounded-full bg-gradient-to-br ${colors[colorIdx]} flex items-center justify-center text-white font-semibold flex-shrink-0 ${className}`}
+      style={{ width: px, height: px, fontSize: px * 0.4 }}
     >
-      <span style={{ fontSize: `${size * 0.35}rem` }}>{getInitials(name)}</span>
+      <span>{getInitials(name)}</span>
     </div>
   );
 }
