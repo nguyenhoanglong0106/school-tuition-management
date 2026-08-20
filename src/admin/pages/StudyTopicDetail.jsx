@@ -10,6 +10,15 @@ import { Modal, ConfirmDialog } from '@/components/common/Modal';
 
 const WORD_TYPES = ['Danh từ (n)', 'Động từ (v)', 'Tính từ (adj)', 'Trạng từ (adv)', 'Cụm từ (phrase)', 'Giới từ (prep)', 'Đại từ (pron)', 'Liên từ (conj)'];
 
+const LEVELS = [
+  { value: 'mới bắt đầu (A1)', label: 'Mới bắt đầu (A1)' },
+  { value: 'cơ bản (A2)', label: 'Cơ bản (A2)' },
+  { value: 'sơ trung cấp (A2-B1)', label: 'Sơ trung cấp (A2-B1)' },
+  { value: 'trung cấp (B1)', label: 'Trung cấp (B1)' },
+  { value: 'trên trung cấp (B2)', label: 'Trên trung cấp (B2)' },
+  { value: 'nâng cao (C1+)', label: 'Nâng cao (C1+)' },
+];
+
 let tempKeySeq = 0;
 const newRow = () => ({ key: `new-${tempKeySeq++}`, id: null, term: '', word_type: WORD_TYPES[0], meaning: '', example_sentence: '' });
 const newDialogueLine = (speaker) => ({ key: `new-${tempKeySeq++}`, speaker, english: '', vietnamese: '' });
@@ -215,6 +224,8 @@ function SituationModal({ topicId, topicTitle, situation, onClose, onSaved }) {
   const [dialogue, setDialogue] = useState(
     (situation?.dialogue ?? []).map((l) => ({ key: `line-${tempKeySeq++}`, ...l }))
   );
+  const [level, setLevel] = useState(LEVELS[2].value);
+  const [notes, setNotes] = useState('');
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -222,7 +233,7 @@ function SituationModal({ topicId, topicTitle, situation, onClose, onSaved }) {
     if (!title.trim()) { addToast('Nhập tên tình huống trước đã', 'error'); return; }
     setGenerating(true);
     try {
-      const lines = await studyTopicService.generateDialogue(title, topicTitle);
+      const lines = await studyTopicService.generateDialogue(title, topicTitle, level, notes);
       setDialogue(lines.map((l) => ({ key: `ai-${tempKeySeq++}`, speaker: l.speaker === 'B' ? 'B' : 'A', english: l.english ?? '', vietnamese: l.vietnamese ?? '' })));
       addToast('AI đã soạn xong, bạn xem lại và chỉnh sửa nếu cần');
     } catch (err) {
@@ -258,9 +269,15 @@ function SituationModal({ topicId, topicTitle, situation, onClose, onSaved }) {
   return (
     <Modal isOpen onClose={onClose} title={isEditing ? 'Sửa tình huống' : 'Thêm tình huống'} size="xl">
       <div className="space-y-4">
-        <div className="flex gap-2 items-end">
-          <Input label="Tên tình huống" required className="flex-1" placeholder="VD: Nhờ vả và giúp đỡ" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <button onClick={handleGenerate} disabled={generating} className="btn-primary btn-sm flex-shrink-0">
+        <Input label="Tên tình huống" required placeholder="VD: Nhờ vả và giúp đỡ" value={title} onChange={(e) => setTitle(e.target.value)} />
+
+        <div className="p-4 rounded-2xl bg-slate-50 space-y-3">
+          <p className="text-xs font-semibold text-slate-500 uppercase">Tùy chỉnh AI (mỗi lớp trình độ khác nhau, AI chỉ tham khảo lúc soạn, không ảnh hưởng gì sau khi lưu)</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <Select label="Trình độ" value={level} onChange={(e) => setLevel(e.target.value)} placeholder={null} options={LEVELS} className="sm:col-span-1" />
+            <Input label="Ghi chú thêm (không bắt buộc)" placeholder="VD: học viên lớp 6, mới học nửa năm, ưu tiên từ vựng mua sắm..." value={notes} onChange={(e) => setNotes(e.target.value)} className="sm:col-span-2" />
+          </div>
+          <button onClick={handleGenerate} disabled={generating} className="btn-primary btn-sm w-full sm:w-auto">
             <Sparkles size={14} /> {generating ? 'Đang tạo...' : dialogue.length > 0 ? 'Tạo lại bằng AI' : 'Tạo bằng AI'}
           </button>
         </div>

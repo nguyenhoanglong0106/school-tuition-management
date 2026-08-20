@@ -44,14 +44,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Chưa cấu hình GEMINI_API_KEY trên server (Supabase Edge Function secret). Xem scripts/setup.md.' }, 500);
     }
 
-    const { title, topicTitle } = await req.json();
+    const { title, topicTitle, level, notes } = await req.json();
     if (!title?.trim()) return jsonResponse({ error: 'Thiếu tên tình huống' }, 400);
+
+    const levelText = level?.trim() || 'sơ trung cấp (A2-B1)';
 
     const prompt = `Bạn là giáo viên tiếng Anh soạn giáo trình. Viết một đoạn hội thoại tiếng Anh ngắn (4-6 lượt nói, luân phiên giữa người A và người B) cho tình huống giao tiếp: "${title.trim()}"${topicTitle ? ` (thuộc chủ đề: "${topicTitle}")` : ''}.
 
 Yêu cầu:
-- Tiếng Anh tự nhiên, đời thường, phù hợp trình độ sơ trung cấp (A2-B1).
-- Mỗi câu có bản dịch tiếng Việt tự nhiên, sát nghĩa, không dịch máy móc.
+- Tiếng Anh tự nhiên, đời thường, phù hợp trình độ ${levelText}.
+- Mỗi câu có bản dịch tiếng Việt tự nhiên, sát nghĩa, không dịch máy móc.${notes?.trim() ? `\n- Lưu ý thêm từ giáo viên (ưu tiên áp dụng): ${notes.trim()}` : ''}
 - Chỉ trả về JSON là một mảng, đúng schema sau, không kèm giải thích hay markdown:
 [{"speaker":"A","english":"...","vietnamese":"..."}]`;
 

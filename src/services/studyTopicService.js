@@ -89,13 +89,13 @@ export const studyTopicService = {
 
   // AI drafts the dialogue once at authoring time (never per student view) —
   // admin/teacher review and edit before saving via addSituation/updateSituation.
-  async generateDialogue(title, topicTitle) {
+  async generateDialogue(title, topicTitle, level, notes) {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
     if (!token) throw new Error('Phiên đăng nhập không hợp lệ');
 
     const { data, error } = await supabase.functions.invoke('generate-dialogue', {
-      body: { title, topicTitle },
+      body: { title, topicTitle, level, notes },
       headers: { Authorization: `Bearer ${token}` },
     });
     if (error) throw new Error(await getFunctionErrorMessage(error, 'Không thể tạo hội thoại bằng AI'));
