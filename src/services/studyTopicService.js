@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, getFunctionErrorMessage } from '@/lib/supabase';
 
 export const studyTopicService = {
   async getAll({ search = '', subjectId = null, page = 1, pageSize = 20 } = {}) {
@@ -23,11 +23,12 @@ export const studyTopicService = {
   async getById(id) {
     const { data, error } = await supabase
       .from('study_topics')
-      .select(`*, subjects(id, name), study_topic_vocabulary(*)`)
+      .select(`*, subjects(id, name), study_topic_vocabulary(*), study_topic_situations(*)`)
       .eq('id', id)
       .single();
     if (error) throw error;
     data.study_topic_vocabulary?.sort((a, b) => a.order_index - b.order_index);
+    data.study_topic_situations?.sort((a, b) => a.order_index - b.order_index);
     return data;
   },
 
@@ -83,6 +84,48 @@ export const studyTopicService = {
 
   async deleteVocabulary(id) {
     const { error } = await supabase.from('study_topic_vocabulary').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // AI drafts the dialogue once at authoring time (never per student view) —
+  // admin/teacher review and edit before saving via addSituation/updateSituation.
+  async generateDialogue(title, topicTitle) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    if (!token) throw new Error('Phiên đăng nhập không hợp lệ');
+
+    const { data, error } = await supabase.functions.invoke('generate-dialogue', {
+      body: { title, topicTitle },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (error) throw new Error(await getFunctionErrorMessage(error, 'Không thể tạo hội thoại bằng AI'));
+    if (data?.error) throw new Error(data.error);
+    return data.dialogue;
+  },
+
+  async addSituation(topicId, { title, dialogue }) {
+    const { data, error } = await supabase
+      .from('study_topic_situations')
+      .insert({ topic_id: topicId, title, dialogue })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateSituation(id, updates) {
+    const { data, error } = await supabase
+      .from('study_topic_situations')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteSituation(id) {
+    const { error } = await supabase.from('study_topic_situations').delete().eq('id', id);
     if (error) throw error;
   },
 

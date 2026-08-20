@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Volume2 } from 'lucide-react';
+import { ArrowLeft, Volume2, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
 import { studyTopicService } from '@/services/studyTopicService';
 import { useToast } from '@/contexts/ToastContext';
 import { Skeleton, EmptyState } from '@/components/common/UI';
@@ -11,6 +11,7 @@ export default function StudyTopicView() {
   const { addToast } = useToast();
   const [topic, setTopic] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     studyTopicService.getById(id)
@@ -31,6 +32,7 @@ export default function StudyTopicView() {
   if (!topic) return null;
 
   const vocab = topic.study_topic_vocabulary ?? [];
+  const situations = topic.study_topic_situations ?? [];
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -61,6 +63,40 @@ export default function StudyTopicView() {
               {v.example_sentence && <p className="text-xs text-slate-400 italic mt-1 ml-8">"{v.example_sentence}"</p>}
             </div>
           ))}
+        </div>
+      )}
+
+      {situations.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-slate-400 uppercase px-1">Tình huống thực hành</p>
+          {situations.map((s) => {
+            const isOpen = expandedId === s.id;
+            return (
+              <div key={s.id} className="card overflow-hidden">
+                <button onClick={() => setExpandedId(isOpen ? null : s.id)} className="w-full p-4 flex items-center gap-3 text-left">
+                  <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0"><MessageSquare size={16} className="text-primary-600" /></div>
+                  <p className="font-medium text-slate-800 flex-1">{s.title}</p>
+                  {isOpen ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 space-y-2 border-t border-slate-50 pt-3">
+                    {(s.dialogue ?? []).map((line, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{line.speaker}</span>
+                        <div className="flex-1 bg-slate-50 rounded-xl p-3">
+                          <p className="text-sm text-slate-800">{line.english}</p>
+                          <p className="text-xs text-slate-400 italic mt-0.5">{line.vietnamese}</p>
+                        </div>
+                        <button onClick={() => speak(line.english)} className="p-1.5 mt-0.5 rounded-lg hover:bg-slate-100 text-primary-600 flex-shrink-0" aria-label="Nghe phát âm">
+                          <Volume2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
