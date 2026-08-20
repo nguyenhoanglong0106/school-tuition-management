@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, School, Trash2, Pencil } from 'lucide-react';
@@ -55,7 +55,7 @@ export default function Classes() {
   );
   const { data, count, page, setPage, pageSize, setPageSize, loading, reload } = useDataList(fetchFn, [search, status]);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { status: 'ACTIVE', fee_cycle: 'MONTHLY', capacity: 30 },
   });
@@ -195,9 +195,21 @@ export default function Classes() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select label="Môn học" required options={subjects.map((s) => ({ value: s.id, label: s.name }))} {...register('subject_id')} error={errors.subject_id?.message} />
             <Select label="Giáo viên phụ trách" options={teachers.map((t) => ({ value: t.id, label: t.full_name }))} {...register('teacher_id')} />
-            <MoneyInput label="Học phí" required {...register('tuition_fee')} error={errors.tuition_fee?.message} />
+            <Controller
+              name="tuition_fee"
+              control={control}
+              render={({ field }) => (
+                <MoneyInput label="Học phí" required {...field} error={errors.tuition_fee?.message} />
+              )}
+            />
             <Select label="Chu kỳ thu phí" options={Object.entries(FEE_CYCLE).map(([value, label]) => ({ value, label }))} {...register('fee_cycle')} />
-            <MoneyInput label="Phí mỗi buổi (nếu theo buổi)" {...register('session_fee')} error={errors.session_fee?.message} />
+            <Controller
+              name="session_fee"
+              control={control}
+              render={({ field }) => (
+                <MoneyInput label="Phí mỗi buổi (nếu theo buổi)" {...field} error={errors.session_fee?.message} />
+              )}
+            />
             <Input label="Ngày khai giảng" type="date" {...register('start_date')} />
             <Input label="Ngày kết thúc" type="date" {...register('end_date')} error={errors.end_date?.message} />
             <Input label="Sĩ số tối đa" type="number" min="1" {...register('capacity')} />

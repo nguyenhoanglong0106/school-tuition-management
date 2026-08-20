@@ -1,9 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { useDataList } from '@/hooks/useDataList';
 import { useToast } from '@/contexts/ToastContext';
 import { Skeleton, EmptyState } from '@/components/common/UI';
+import { Modal } from '@/components/common/Modal';
 import { NOTIFICATION_TYPE } from '@/constants';
 import { formatRelativeTime } from '@/utils/formatters';
 
@@ -11,8 +12,10 @@ export default function StudentNotifications() {
   const { addToast } = useToast();
   const fetchFn = useCallback(({ page, pageSize }) => notificationService.getAll({ page, pageSize }), []);
   const { data, loading, reload } = useDataList(fetchFn, [], 50);
+  const [selected, setSelected] = useState(null);
 
   const handleClickItem = async (item) => {
+    setSelected(item);
     if (!item.read_at) {
       await notificationService.markRead(item.notification_id);
       reload();
@@ -59,6 +62,14 @@ export default function StudentNotifications() {
           ))}
         </div>
       )}
+
+      <Modal isOpen={!!selected} onClose={() => setSelected(null)} title={selected?.notifications?.title} size="sm">
+        <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
+          <span className="text-lg">{NOTIFICATION_TYPE[selected?.notifications?.type]?.icon ?? '🔔'}</span>
+          <span>{formatRelativeTime(selected?.notifications?.created_at)}</span>
+        </div>
+        <p className="text-sm text-slate-700 whitespace-pre-wrap">{selected?.notifications?.message}</p>
+      </Modal>
     </div>
   );
 }

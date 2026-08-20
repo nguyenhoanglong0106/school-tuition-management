@@ -7,7 +7,16 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // Custom sw.js (src/sw.js) is required so we can add our own `push` /
+      // `notificationclick` listeners — the default `generateSW` strategy
+      // doesn't allow injecting arbitrary event handlers into the worker.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      },
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
         name: 'Quản Lý Học Thêm',
@@ -25,20 +34,6 @@ export default defineConfig({
           { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ]
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallback: '/index.html',
-        // Never let the app shell cache mask a stale session — auth/API calls
-        // always go to Supabase over the network, never through the SW cache.
-        navigateFallbackDenylist: [/^\/api/],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.origin === self.location.origin && /\.(png|jpg|jpeg|svg|webp)$/.test(url.pathname),
-            handler: 'CacheFirst',
-            options: { cacheName: 'app-images', expiration: { maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 } },
-          },
-        ],
-      }
     })
   ],
   resolve: {

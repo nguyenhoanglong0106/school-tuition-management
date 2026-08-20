@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { pushSubscriptionService } from '@/services/pushSubscriptionService';
 
 export const notificationService = {
   async getAll({ userId, page = 1, pageSize = 20 } = {}) {
@@ -77,6 +78,12 @@ export const notificationService = {
     );
     if (recErr) throw recErr;
 
+    // Best-effort: push delivery failing (no subscriptions, VAPID not set up
+    // yet, etc.) should never break the in-app notification that just saved.
+    pushSubscriptionService
+      .sendPush({ profileIds, title, body: message })
+      .catch((err) => console.warn('Không thể gửi thông báo đẩy:', err.message));
+
     return notif;
   },
 
@@ -108,9 +115,18 @@ export const notificationService = {
         profileIds.map((uid) => ({ notification_id: notif.id, user_id: uid }))
       );
       if (recErr) throw recErr;
+
+      pushSubscriptionService
+        .sendPush({ profileIds, title, body: message })
+        .catch((err) => console.warn('Không thể gửi thông báo đẩy:', err.message));
     }
 
     return notif;
+  },
+
+  async deleteNotification(id) {
+    const { error } = await supabase.from('notifications').delete().eq('id', id);
+    if (error) throw error;
   },
 
   // Recent notifications created by admins/teachers (management list view)

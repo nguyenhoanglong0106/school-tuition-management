@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, Send, Megaphone } from 'lucide-react';
+import { Bell, Send, Megaphone, Trash2 } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { classService } from '@/services/classService';
 import { useDataList } from '@/hooks/useDataList';
@@ -7,16 +7,34 @@ import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pagination, EmptyState, Skeleton } from '@/components/common/UI';
 import { Select, Input, Textarea } from '@/components/common/Form';
-import { Modal } from '@/components/common/Modal';
+import { Modal, ConfirmDialog } from '@/components/common/Modal';
 import { NOTIFICATION_TYPE } from '@/constants';
 import { formatRelativeTime } from '@/utils/formatters';
 
 export default function AdminNotifications() {
   const { isAdmin } = useAuth();
+  const { addToast } = useToast();
   const [composeOpen, setComposeOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
 
   const fetchFn = useCallback(({ page, pageSize }) => notificationService.getSentHistory({ page, pageSize }), []);
   const { data, count, page, setPage, pageSize, setPageSize, loading, reload } = useDataList(fetchFn, []);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await notificationService.deleteNotification(deleteTarget.id);
+      addToast('Đã xóa thông báo');
+      setDeleteTarget(null);
+      reload();
+    } catch (err) {
+      addToast(err.message ?? 'Không thể xóa thông báo', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -35,7 +53,7 @@ export default function AdminNotifications() {
       ) : (
         <div className="space-y-3">
           {data.map((n) => (
-            <div key={n.id} className="card p-4 flex gap-3">
+            <div key={n.id} onClick={() => setDetailItem(n)} className="card p-4 flex gap-3 cursor-pointer hover:shadow-elevated transition-shadow">
               <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0 text-lg">
                 {NOTIFICATION_TYPE[n.type]?.icon ?? '🔔'}
               </div>
@@ -44,9 +62,16 @@ export default function AdminNotifications() {
                   <p className="font-semibold text-slate-800 truncate">{n.title}</p>
                   <span className="text-xs text-slate-400 flex-shrink-0">{formatRelativeTime(n.created_at)}</span>
                 </div>
-                <p className="text-sm text-slate-500 mt-0.5">{n.message}</p>
+                <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
                 <p className="text-xs text-slate-400 mt-1">{n.classes?.class_name ?? 'Toàn trung tâm'}</p>
               </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setDeleteTarget(n); }}
+                className="p-2 h-fit rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors flex-shrink-0"
+                aria-label="Xóa thông báo"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           ))}
         </div>
@@ -57,6 +82,25 @@ export default function AdminNotifications() {
       {composeOpen && (
         <ComposeModal isAdmin={isAdmin} onClose={() => setComposeOpen(false)} onSent={() => { setComposeOpen(false); reload(); }} />
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Xóa thông báo"
+        message={`Xóa thông báo "${deleteTarget?.title}"? Học viên đã nhận sẽ không còn thấy thông báo này nữa.`}
+        loading={deleting}
+      />
+
+      <Modal isOpen={!!detailItem} onClose={() => setDetailItem(null)} title={detailItem?.title} size="sm">
+        <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
+          <span className="text-lg">{NOTIFICATION_TYPE[detailItem?.type]?.icon ?? '🔔'}</span>
+          <span>{formatRelativeTime(detailItem?.created_at)}</span>
+          <span>•</span>
+          <span>{detailItem?.classes?.class_name ?? 'Toàn trung tâm'}</span>
+        </div>
+        <p className="text-sm text-slate-700 whitespace-pre-wrap">{detailItem?.message}</p>
+      </Modal>
     </div>
   );
 }
