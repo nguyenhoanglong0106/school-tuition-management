@@ -30,6 +30,7 @@ const AdminDocuments = lazy(() => import('@/admin/pages/Documents'));
 const AdminNotifications = lazy(() => import('@/admin/pages/Notifications'));
 const BankAccounts = lazy(() => import('@/admin/pages/BankAccounts'));
 const SystemSettings = lazy(() => import('@/admin/pages/Settings'));
+const AdminHelp = lazy(() => import('@/admin/pages/Help'));
 
 const StudentLayout = lazy(() => import('@/student/layouts/StudentLayout'));
 const StudentHome = lazy(() => import('@/student/pages/Home'));
@@ -106,6 +107,7 @@ export default function AppRoutes() {
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="bank-accounts" element={<AdminOnly><BankAccounts /></AdminOnly>} />
           <Route path="settings" element={<AdminOnly><SystemSettings /></AdminOnly>} />
+          <Route path="help" element={<AdminOnly><AdminHelp /></AdminOnly>} />
         </Route>
 
         {/* Student / Parent PWA area */}

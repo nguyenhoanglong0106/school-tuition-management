@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, UserCog, BookOpen, School, CalendarDays,
   ClipboardCheck, CreditCard, Receipt, TrendingUp, FileText,
   Bell, Landmark, Settings, LogOut, Menu, X, GraduationCap,
-  ChevronRight
+  ChevronRight, LifeBuoy
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/admin/notifications', label: 'Thông báo', icon: Bell },
   { to: '/admin/bank-accounts', label: 'Tài khoản NH', icon: Landmark },
   { to: '/admin/settings', label: 'Cấu hình', icon: Settings },
+  { to: '/admin/help', label: 'Trợ giúp', icon: LifeBuoy },
 ];
 
 const TEACHER_NAV_ITEMS = [
