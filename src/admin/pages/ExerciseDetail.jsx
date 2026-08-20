@@ -234,7 +234,9 @@ function QuestionModal({ exerciseId, question, nextOrderIndex, onClose, onSaved 
   );
   const [correctIds, setCorrectIds] = useState(key?.correct_answer ?? []);
   const [blanks, setBlanks] = useState(
-    key?.correct_answer?.length ? key.correct_answer.map((accepted) => ({ accepted: accepted.join(', ') })) : [{ accepted: '' }]
+    question?.question_type === 'FILL_BLANK' && key?.correct_answer?.length
+      ? key.correct_answer.map((accepted) => ({ accepted: Array.isArray(accepted) ? accepted.join(', ') : String(accepted) }))
+      : [{ accepted: '' }]
   );
   const [caseSensitive, setCaseSensitive] = useState(key?.case_sensitive ?? false);
   const [saving, setSaving] = useState(false);
