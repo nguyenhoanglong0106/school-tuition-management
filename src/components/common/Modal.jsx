@@ -1,10 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export function Modal({ isOpen, onClose, title, children, size = 'md', showClose = true }) {
-  const overlayRef = useRef(null);
-
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -36,9 +34,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
 
   return createPortal(
     <div
-      ref={overlayRef}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      onClick={(e) => e.target === overlayRef.current && onClose?.()}
     >
       {/* Modal */}
       <div
